@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'models/todo.dart';
+import 'services/storage_service.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final storageService = await StorageService.init();
+  runApp(MyApp(storageService: storageService));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final StorageService storageService;
+
+  const MyApp({
+    super.key,
+    required this.storageService,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,60 +28,82 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const MyDayPage(),
+      home: MyDayPage(storageService: storageService),
     );
   }
 }
 
 class MyDayPage extends StatefulWidget {
-  const MyDayPage({super.key});
+  final StorageService storageService;
+
+  const MyDayPage({
+    super.key,
+    required this.storageService,
+  });
 
   @override
   State<MyDayPage> createState() => _MyDayPageState();
 }
 
 class _MyDayPageState extends State<MyDayPage> {
-  // 示例数据
-  final List<Todo> todos = [
-    Todo(
-      title: '在 GitHub 创建首个商业化仓库',
-      createdAt: DateTime.now(),
-    ),
-    Todo(
-      title: '听力15分钟',
-      isCompleted: true,
-      createdAt: DateTime.now(),
-    ),
-    Todo(
-      title: '听写句子10个',
-      isCompleted: true,
-      createdAt: DateTime.now(),
-    ),
-    Todo(
-      title: '背单词10个',
-      isCompleted: true,
-      createdAt: DateTime.now(),
-    ),
-  ];
+  List<Todo> _todos = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTodos();
+  }
+
+  Future<void> _loadTodos() async {
+    try {
+      final todos = await widget.storageService.loadTodos();
+      setState(() {
+        _todos = todos;
+        _isLoading = false;
+      });
+    } catch (e) {
+      // TODO: 添加错误处理
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveTodos() async {
+    try {
+      await widget.storageService.saveTodos(_todos);
+    } catch (e) {
+      // TODO: 添加错误处理
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('保存失败，请重试'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   void _toggleTodo(String id) {
     setState(() {
-      final todoIndex = todos.indexWhere((todo) => todo.id == id);
+      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
       if (todoIndex != -1) {
-        todos[todoIndex] = todos[todoIndex].copyWith(
-          isCompleted: !todos[todoIndex].isCompleted,
+        _todos[todoIndex] = _todos[todoIndex].copyWith(
+          isCompleted: !_todos[todoIndex].isCompleted,
         );
+        _saveTodos();
       }
     });
   }
 
   void _toggleFavorite(String id) {
     setState(() {
-      final todoIndex = todos.indexWhere((todo) => todo.id == id);
+      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
       if (todoIndex != -1) {
-        todos[todoIndex] = todos[todoIndex].copyWith(
-          isFavorite: !todos[todoIndex].isFavorite,
+        _todos[todoIndex] = _todos[todoIndex].copyWith(
+          isFavorite: !_todos[todoIndex].isFavorite,
         );
+        _saveTodos();
       }
     });
   }
@@ -86,24 +116,25 @@ class _MyDayPageState extends State<MyDayPage> {
     String? description,
   }) {
     setState(() {
-      todos.add(Todo(
+      _todos.add(Todo(
         title: title,
         createdAt: DateTime.now(),
         dueDate: dueDate,
         isFavorite: isFavorite,
         description: description,
       ));
+      _saveTodos();
     });
-  }  
+  } 
 
-  void _showAddTodoSheet() {
+    void _showAddTodoSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AddTodoSheet(onAdd: _addTodo),
     );
-  }  
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,11 +210,15 @@ class _MyDayPageState extends State<MyDayPage> {
                   ),
                 ),
                 Expanded(
-                  child: TodoList(
-                    todos: todos,
-                    onToggle: _toggleTodo,
-                    onToggleFavorite: _toggleFavorite,
-                  ),
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : TodoList(
+                          todos: _todos,
+                          onToggle: _toggleTodo,
+                          onToggleFavorite: _toggleFavorite,
+                        ),
                 ),
               ],
             ),
