@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'models/todo.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,8 +25,58 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyDayPage extends StatelessWidget {
+class MyDayPage extends StatefulWidget {
   const MyDayPage({super.key});
+
+  @override
+  State<MyDayPage> createState() => _MyDayPageState();
+}
+
+class _MyDayPageState extends State<MyDayPage> {
+  // 示例数据
+  final List<Todo> todos = [
+    Todo(
+      title: '在 GitHub 创建首个商业化仓库',
+      createdAt: DateTime.now(),
+    ),
+    Todo(
+      title: '听力15分钟',
+      isCompleted: true,
+      createdAt: DateTime.now(),
+    ),
+    Todo(
+      title: '听写句子10个',
+      isCompleted: true,
+      createdAt: DateTime.now(),
+    ),
+    Todo(
+      title: '背单词10个',
+      isCompleted: true,
+      createdAt: DateTime.now(),
+    ),
+  ];
+
+  void _toggleTodo(String id) {
+    setState(() {
+      final todoIndex = todos.indexWhere((todo) => todo.id == id);
+      if (todoIndex != -1) {
+        todos[todoIndex] = todos[todoIndex].copyWith(
+          isCompleted: !todos[todoIndex].isCompleted,
+        );
+      }
+    });
+  }
+
+  void _toggleFavorite(String id) {
+    setState(() {
+      final todoIndex = todos.indexWhere((todo) => todo.id == id);
+      if (todoIndex != -1) {
+        todos[todoIndex] = todos[todoIndex].copyWith(
+          isFavorite: !todos[todoIndex].isFavorite,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,9 +109,7 @@ class MyDayPage extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: NetworkImage(
-              'https://picsum.photos/seed/picsum/600/800'
-            ),
+            image: NetworkImage('https://picsum.photos/seed/picsum/600/800'),
             fit: BoxFit.cover,
           ),
         ),
@@ -74,16 +124,16 @@ class MyDayPage extends StatelessWidget {
               ],
             ),
           ),
-          child: const SafeArea(
+          child: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'My Day',
                         style: TextStyle(
                           fontSize: 32,
@@ -92,8 +142,8 @@ class MyDayPage extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Tuesday, February 18',
-                        style: TextStyle(
+                        DateFormat('EEEE, MMMM d').format(DateTime.now()),
+                        style: const TextStyle(
                           fontSize: 16,
                           color: Colors.white70,
                         ),
@@ -102,7 +152,11 @@ class MyDayPage extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: TodoList(),
+                  child: TodoList(
+                    todos: todos,
+                    onToggle: _toggleTodo,
+                    onToggleFavorite: _toggleFavorite,
+                  ),
                 ),
               ],
             ),
@@ -120,22 +174,67 @@ class MyDayPage extends StatelessWidget {
 }
 
 class TodoList extends StatelessWidget {
-  const TodoList({super.key});
+  final List<Todo> todos;
+  final Function(String) onToggle;
+  final Function(String) onToggleFavorite;
+
+  const TodoList({
+    super.key,
+    required this.todos,
+    required this.onToggle,
+    required this.onToggleFavorite,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    // 分离已完成和未完成的任务
+    final incompleteTodos = todos.where((todo) => !todo.isCompleted).toList();
+    final completedTodos = todos.where((todo) => todo.isCompleted).toList();
+
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: 1,
-      itemBuilder: (context, index) {
-        return const TodoItem();
-      },
+      children: [
+        // 未完成的任务
+        ...incompleteTodos.map((todo) => TodoItem(
+              todo: todo,
+              onToggle: onToggle,
+              onToggleFavorite: onToggleFavorite,
+            )),
+        // 如果有已完成的任务，显示分隔符和标题
+        if (completedTodos.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: Text(
+              '已完成',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ...completedTodos.map((todo) => TodoItem(
+                todo: todo,
+                onToggle: onToggle,
+                onToggleFavorite: onToggleFavorite,
+              )),
+        ],
+      ],
     );
   }
 }
 
 class TodoItem extends StatelessWidget {
-  const TodoItem({super.key});
+  final Todo todo;
+  final Function(String) onToggle;
+  final Function(String) onToggleFavorite;
+
+  const TodoItem({
+    super.key,
+    required this.todo,
+    required this.onToggle,
+    required this.onToggleFavorite,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -143,27 +242,31 @@ class TodoItem extends StatelessWidget {
       color: Colors.black.withOpacity(0.7),
       child: ListTile(
         leading: Checkbox(
-          value: false,
-          onChanged: (value) {
-            // TODO: Implement task completion
-          },
+          value: todo.isCompleted,
+          onChanged: (value) => onToggle(todo.id),
         ),
-        title: const Text(
-          '在 GitHub 创建首个商业化仓库',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          todo.title,
+          style: TextStyle(
+            color: Colors.white,
+            decoration: todo.isCompleted ? TextDecoration.lineThrough : null,
+            decorationColor: Colors.white54,
+          ),
         ),
-        subtitle: const Text(
+        subtitle: Text(
           'Today',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(
+            color: Colors.white70,
+            decoration: todo.isCompleted ? TextDecoration.lineThrough : null,
+            decorationColor: Colors.white54,
+          ),
         ),
         trailing: IconButton(
-          icon: const Icon(
-            Icons.star_border,
-            color: Colors.white70,
+          icon: Icon(
+            todo.isFavorite ? Icons.star : Icons.star_border,
+            color: todo.isFavorite ? Colors.amber : Colors.white70,
           ),
-          onPressed: () {
-            // TODO: Implement favorite
-          },
+          onPressed: () => onToggleFavorite(todo.id),
         ),
       ),
     );
