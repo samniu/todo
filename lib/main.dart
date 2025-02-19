@@ -78,14 +78,23 @@ class _MyDayPageState extends State<MyDayPage> {
     });
   }
 
-  void _addTodo(String title) {
+  void _addTodo({
+    required String title,
+    DateTime? dueDate,
+    DateTime? reminderTime,
+    bool isFavorite = false,
+    String? description,
+  }) {
     setState(() {
       todos.add(Todo(
         title: title,
         createdAt: DateTime.now(),
+        dueDate: dueDate,
+        isFavorite: isFavorite,
+        description: description,
       ));
     });
-  }
+  }  
 
   void _showAddTodoSheet() {
     showModalBottomSheet(
@@ -191,7 +200,13 @@ class _MyDayPageState extends State<MyDayPage> {
 }
 
 class AddTodoSheet extends StatefulWidget {
-  final Function(String) onAdd;
+  final Function({
+    required String title,
+    DateTime? dueDate,
+    DateTime? reminderTime,
+    bool isFavorite,
+    String? description,
+  }) onAdd;
 
   const AddTodoSheet({
     super.key,
@@ -203,17 +218,92 @@ class AddTodoSheet extends StatefulWidget {
 }
 
 class _AddTodoSheetState extends State<AddTodoSheet> {
-  final _textController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
   bool _showError = false;
+  DateTime? _dueDate;
+  TimeOfDay? _dueTime;
+  bool _isFavorite = false;  
 
   @override
   void dispose() {
-    _textController.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dueDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.tealAccent,
+              onPrimary: Colors.black,
+              surface: Colors.black87,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _dueDate = picked;
+      });
+      // 如果选择了日期但还没有时间，显示时间选择器
+      if (_dueTime == null) {
+        _selectTime();
+      }
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _dueTime ?? TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.tealAccent,
+              onPrimary: Colors.black,
+              surface: Colors.black87,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _dueTime = picked;
+      });
+    }
+  }
+
+  DateTime? get _combinedDateTime {
+    if (_dueDate == null) return null;
+    if (_dueTime == null) return _dueDate;
+    return DateTime(
+      _dueDate!.year,
+      _dueDate!.month,
+      _dueDate!.day,
+      _dueTime!.hour,
+      _dueTime!.minute,
+    );
+  }
+
   void _handleSubmit() {
-    final title = _textController.text.trim();
+    final title = _titleController.text.trim();
     if (title.isEmpty) {
       setState(() {
         _showError = true;
@@ -221,8 +311,24 @@ class _AddTodoSheetState extends State<AddTodoSheet> {
       return;
     }
 
-    widget.onAdd(title);
+    widget.onAdd(
+      title: title,
+      dueDate: _combinedDateTime,
+      isFavorite: _isFavorite,
+      description: _descriptionController.text.trim().isEmpty 
+          ? null 
+          : _descriptionController.text.trim(),
+    );
     Navigator.pop(context);
+  }
+
+  String _formatDateTime() {
+    if (_dueDate == null) return '';
+    final date = DateFormat('MM月dd日').format(_dueDate!);
+    final time = _dueTime != null 
+        ? ' ${_dueTime!.format(context)}' 
+        : '';
+    return '$date$time';
   }
 
   @override
@@ -259,7 +365,7 @@ class _AddTodoSheetState extends State<AddTodoSheet> {
           ),
           const SizedBox(height: 16),
           TextField(
-            controller: _textController,
+            controller: _titleController,
             autofocus: true,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
@@ -271,7 +377,10 @@ class _AddTodoSheetState extends State<AddTodoSheet> {
               filled: true,
               fillColor: Colors.white12,
               errorText: _showError ? '请输入任务内容' : null,
-              prefixIcon: const Icon(Icons.check_circle_outline, color: Colors.white70),
+              prefixIcon: const Icon(
+                Icons.check_circle_outline, 
+                color: Colors.white70
+              ),
             ),
             onChanged: (value) {
               if (_showError && value.trim().isNotEmpty) {
@@ -280,7 +389,55 @@ class _AddTodoSheetState extends State<AddTodoSheet> {
                 });
               }
             },
-            onSubmitted: (_) => _handleSubmit(),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _descriptionController,
+            style: const TextStyle(color: Colors.white),
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: '添加备注...',
+              hintStyle: const TextStyle(color: Colors.white54),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              filled: true,
+              fillColor: Colors.white12,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            children: [
+              ActionChip(
+                avatar: const Icon(Icons.calendar_today, size: 18),
+                label: Text(
+                  _dueDate == null ? '添加截止日期' : _formatDateTime(),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                backgroundColor: Colors.white12,
+                onPressed: _selectDate,
+              ),
+              ActionChip(
+                avatar: Icon(
+                  _isFavorite ? Icons.star : Icons.star_border,
+                  size: 18,
+                  color: _isFavorite ? Colors.amber : null,
+                ),
+                label: Text(
+                  _isFavorite ? '已标记重要' : '标记为重要',
+                  style: TextStyle(
+                    color: _isFavorite ? Colors.amber : Colors.white,
+                  ),
+                ),
+                backgroundColor: Colors.white12,
+                onPressed: () {
+                  setState(() {
+                    _isFavorite = !_isFavorite;
+                  });
+                },
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Row(
