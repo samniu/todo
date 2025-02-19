@@ -78,6 +78,24 @@ class _MyDayPageState extends State<MyDayPage> {
     });
   }
 
+  void _addTodo(String title) {
+    setState(() {
+      todos.add(Todo(
+        title: title,
+        createdAt: DateTime.now(),
+      ));
+    });
+  }
+
+  void _showAddTodoSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddTodoSheet(onAdd: _addTodo),
+    );
+  }  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -164,10 +182,122 @@ class _MyDayPageState extends State<MyDayPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement add task
-        },
+        onPressed: _showAddTodoSheet,
         child: const Icon(Icons.add),
+      ),
+
+    );
+  }
+}
+
+class AddTodoSheet extends StatefulWidget {
+  final Function(String) onAdd;
+
+  const AddTodoSheet({
+    super.key,
+    required this.onAdd,
+  });
+
+  @override
+  State<AddTodoSheet> createState() => _AddTodoSheetState();
+}
+
+class _AddTodoSheetState extends State<AddTodoSheet> {
+  final _textController = TextEditingController();
+  bool _showError = false;
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _handleSubmit() {
+    final title = _textController.text.trim();
+    if (title.isEmpty) {
+      setState(() {
+        _showError = true;
+      });
+      return;
+    }
+
+    widget.onAdd(title);
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '添加任务',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _textController,
+            autofocus: true,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: '输入新任务...',
+              hintStyle: const TextStyle(color: Colors.white54),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              filled: true,
+              fillColor: Colors.white12,
+              errorText: _showError ? '请输入任务内容' : null,
+              prefixIcon: const Icon(Icons.check_circle_outline, color: Colors.white70),
+            ),
+            onChanged: (value) {
+              if (_showError && value.trim().isNotEmpty) {
+                setState(() {
+                  _showError = false;
+                });
+              }
+            },
+            onSubmitted: (_) => _handleSubmit(),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _handleSubmit,
+                child: const Text('添加'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
