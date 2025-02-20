@@ -5,6 +5,7 @@ import '../services/storage_service.dart';
 import '../widgets/todo_list.dart';
 import '../widgets/quick_add_task.dart';
 import '../widgets/task_sheet.dart';
+import '../utils/date_formatter.dart';
 
 class MyDayPage extends StatefulWidget {
   final StorageService storageService;
@@ -23,6 +24,8 @@ class _MyDayPageState extends State<MyDayPage> {
   bool _isLoading = true;
   final FocusNode _quickAddFocusNode = FocusNode();
   bool _showingQuickAdd = false;
+  bool _showingDatePicker = false;
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -70,24 +73,52 @@ class _MyDayPageState extends State<MyDayPage> {
     });
   }
 
-  void _editTodo(Todo todo) {
+  void _showQuickAdd() {
     setState(() {
-      final index = _todos.indexWhere((t) => t.id == todo.id);
-      if (index != -1) {
-        _todos[index] = todo;
-        _saveTodos();
+      _showingQuickAdd = true;
+      _showingDatePicker = false;
+    });
+    
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (!_quickAddFocusNode.hasFocus) {
+        FocusScope.of(context).requestFocus(_quickAddFocusNode);
       }
     });
   }
 
-  void _deleteTodo(String id) {
+  void _hideQuickAdd() {
     setState(() {
-      _todos.removeWhere((todo) => todo.id == id);
-      _saveTodos();
+      _showingQuickAdd = false;
+      _showingDatePicker = false;
+      _selectedDate = null;
+    });
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _showDatePickerPage() {
+    setState(() {
+      _showingDatePicker = true;
+      _showingQuickAdd = false;
+    });
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _hideDatePickerPage(DateTime? date) {
+    setState(() {
+      _showingDatePicker = false;
+      _showingQuickAdd = true;
+      if (date != null) {
+        _selectedDate = date;
+      }
+    });
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (!_quickAddFocusNode.hasFocus) {
+        FocusScope.of(context).requestFocus(_quickAddFocusNode);
+      }
     });
   }
 
-  void _toggleTodo(String id) {
+    void _toggleTodo(String id) {
     setState(() {
       final todoIndex = _todos.indexWhere((todo) => todo.id == id);
       if (todoIndex != -1) {
@@ -124,25 +155,133 @@ class _MyDayPageState extends State<MyDayPage> {
     );
   }
 
-  void _showQuickAdd() {
+    void _editTodo(Todo todo) {
     setState(() {
-      _showingQuickAdd = true;
-    });
-    
-    Future.delayed(const Duration(milliseconds: 50), () {
-      if (!_quickAddFocusNode.hasFocus) {
-        FocusScope.of(context).requestFocus(_quickAddFocusNode);
+      final index = _todos.indexWhere((t) => t.id == todo.id);
+      if (index != -1) {
+        _todos[index] = todo;
+        _saveTodos();
       }
     });
   }
 
-  void _hideQuickAdd() {
-    if (_showingQuickAdd) {
-      FocusManager.instance.primaryFocus?.unfocus();
-      setState(() {
-        _showingQuickAdd = false;
-      });
-    }
+  void _deleteTodo(String id) {
+    setState(() {
+      _todos.removeWhere((todo) => todo.id == id);
+      _saveTodos();
+    });
+  }
+
+  Widget _buildDatePickerPage() {
+    final now = DateTime.now();
+    final tomorrow = now.add(const Duration(days: 1));
+    final nextWeek = now.add(const Duration(days: 7));
+
+    return Container(
+      color: Colors.black87,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Due',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                TextButton(
+                  child: const Text(
+                    'Done',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontSize: 16,
+                    ),
+                  ),
+                  onPressed: () => _hideDatePickerPage(null),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_today, color: Colors.white70),
+            title: const Text(
+              'Today',
+              style: TextStyle(color: Colors.white),
+            ),
+            trailing: Text(
+              DateFormatter.getDayName(now),
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
+            ),
+            onTap: () => _hideDatePickerPage(now),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_today, color: Colors.white70),
+            title: const Text(
+              'Tomorrow',
+              style: TextStyle(color: Colors.white),
+            ),
+            trailing: Text(
+              DateFormatter.getDayName(tomorrow),
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
+            ),
+            onTap: () => _hideDatePickerPage(tomorrow),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_month, color: Colors.white70),
+            title: const Text(
+              'Next Week',
+              style: TextStyle(color: Colors.white),
+            ),
+            trailing: Text(
+              DateFormatter.getDayName(nextWeek),
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
+            ),
+            onTap: () => _hideDatePickerPage(nextWeek),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_view_day, color: Colors.white70),
+            title: const Text(
+              'Pick a date',
+              style: TextStyle(color: Colors.white),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white70),
+            onTap: () async {
+              final now = DateTime.now();
+              final lastDate = DateTime(now.year + 1, now.month, now.day);
+              
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: now,
+                firstDate: now,
+                lastDate: lastDate,
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.dark(
+                        primary: Colors.tealAccent,
+                        onPrimary: Colors.black,
+                        surface: Colors.black87,
+                        onSurface: Colors.white,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null) {
+                _hideDatePickerPage(picked);
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -228,7 +367,7 @@ class _MyDayPageState extends State<MyDayPage> {
                         onEdit: _showTaskSheet,
                       ),
                     ),
-                    if (!_showingQuickAdd)
+                    if (!_showingQuickAdd && !_showingDatePicker)
                       Material(
                         color: Colors.black.withOpacity(0.7),
                         child: InkWell(
@@ -260,32 +399,29 @@ class _MyDayPageState extends State<MyDayPage> {
               ),
             ),
           ),
-          if (_showingQuickAdd) ...[
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: _hideQuickAdd,
-                child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                ),
-              ),
-            ),
+          if (_showingQuickAdd && !_showingDatePicker)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: GestureDetector(
-                onTap: () {}, // 阻止点击事件传播
-                child: QuickAddTask(
-                  focusNode: _quickAddFocusNode,
-                  onSave: (todo) {
-                    _addTodo(todo);
-                    _hideQuickAdd();
-                  },
-                  onCancel: _hideQuickAdd,
-                ),
+              child: QuickAddTask(
+                focusNode: _quickAddFocusNode,
+                selectedDate: _selectedDate,
+                onSave: (todo) {
+                  _addTodo(todo);
+                  _hideQuickAdd();
+                },
+                onCancel: _hideQuickAdd,
+                onDateSelect: _showDatePickerPage,
               ),
             ),
-          ],
+          if (_showingDatePicker)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildDatePickerPage(),
+            ),
         ],
       ),
     );

@@ -17,4 +17,8 @@ class DateFormatter {
       return DateFormat('MM月dd日').format(date);
     }
   }
+
+  static String getDayName(DateTime date) {
+    return DateFormat('E').format(date);  // 返回简短的星期名
+  }
 }
