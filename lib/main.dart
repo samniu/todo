@@ -124,8 +124,16 @@ void _showTaskSheet([Todo? todo]) {
     builder: (context) => TaskSheet(
       initialTodo: todo,
       onSave: todo == null ? _addTodo : _editTodo,
+      onDelete: todo != null ? _deleteTodo : null, 
     ),
   );
+}
+
+void _deleteTodo(String id) {
+  setState(() {
+    _todos.removeWhere((todo) => todo.id == id);
+    _saveTodos();
+  });
 }
 
   @override
@@ -224,268 +232,19 @@ void _showTaskSheet([Todo? todo]) {
     );
   }
 }
-/*
-class AddTodoSheet extends StatefulWidget {
-  final Function({
-    required String title,
-    DateTime? dueDate,
-    DateTime? reminderTime,
-    bool isFavorite,
-    String? description,
-  })
-  onAdd;
 
-  const AddTodoSheet({super.key, required this.onAdd});
-
-  @override
-  State<AddTodoSheet> createState() => _AddTodoSheetState();
-}
-
-class _AddTodoSheetState extends State<AddTodoSheet> {
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  bool _showError = false;
-  DateTime? _dueDate;
-  TimeOfDay? _dueTime;
-  bool _isFavorite = false;
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _dueDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Colors.tealAccent,
-              onPrimary: Colors.black,
-              surface: Colors.black87,
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        _dueDate = picked;
-      });
-      // 如果选择了日期但还没有时间，显示时间选择器
-      if (_dueTime == null) {
-        _selectTime();
-      }
-    }
-  }
-
-  Future<void> _selectTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _dueTime ?? TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Colors.tealAccent,
-              onPrimary: Colors.black,
-              surface: Colors.black87,
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        _dueTime = picked;
-      });
-    }
-  }
-
-  DateTime? get _combinedDateTime {
-    if (_dueDate == null) return null;
-    if (_dueTime == null) return _dueDate;
-    return DateTime(
-      _dueDate!.year,
-      _dueDate!.month,
-      _dueDate!.day,
-      _dueTime!.hour,
-      _dueTime!.minute,
-    );
-  }
-
-  void _handleSubmit() {
-    final title = _titleController.text.trim();
-    if (title.isEmpty) {
-      setState(() {
-        _showError = true;
-      });
-      return;
-    }
-
-    widget.onAdd(
-      title: title,
-      dueDate: _combinedDateTime,
-      isFavorite: _isFavorite,
-      description:
-          _descriptionController.text.trim().isEmpty
-              ? null
-              : _descriptionController.text.trim(),
-    );
-    Navigator.pop(context);
-  }
-
-  String _formatDateTime() {
-    if (_dueDate == null) return '';
-    final date = DateFormat('MM月dd日').format(_dueDate!);
-    final time = _dueTime != null ? ' ${_dueTime!.format(context)}' : '';
-    return '$date$time';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.black87,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  '添加任务',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.white70),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _titleController,
-            autofocus: true,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: '输入新任务...',
-              hintStyle: const TextStyle(color: Colors.white54),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              filled: true,
-              fillColor: Colors.white12,
-              errorText: _showError ? '请输入任务内容' : null,
-              prefixIcon: const Icon(
-                Icons.check_circle_outline,
-                color: Colors.white70,
-              ),
-            ),
-            onChanged: (value) {
-              if (_showError && value.trim().isNotEmpty) {
-                setState(() {
-                  _showError = false;
-                });
-              }
-            },
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _descriptionController,
-            style: const TextStyle(color: Colors.white),
-            maxLines: 2,
-            decoration: InputDecoration(
-              hintText: '添加备注...',
-              hintStyle: const TextStyle(color: Colors.white54),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              filled: true,
-              fillColor: Colors.white12,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            children: [
-              ActionChip(
-                avatar: const Icon(Icons.calendar_today, size: 18),
-                label: Text(
-                  _dueDate == null ? '添加截止日期' : _formatDateTime(),
-                  style: const TextStyle(color: Colors.white),
-                ),
-                backgroundColor: Colors.white12,
-                onPressed: _selectDate,
-              ),
-              ActionChip(
-                avatar: Icon(
-                  _isFavorite ? Icons.star : Icons.star_border,
-                  size: 18,
-                  color: _isFavorite ? Colors.amber : null,
-                ),
-                label: Text(
-                  _isFavorite ? '已标记重要' : '标记为重要',
-                  style: TextStyle(
-                    color: _isFavorite ? Colors.amber : Colors.white,
-                  ),
-                ),
-                backgroundColor: Colors.white12,
-                onPressed: () {
-                  setState(() {
-                    _isFavorite = !_isFavorite;
-                  });
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(onPressed: _handleSubmit, child: const Text('添加')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-*/
 // 重命名并改进原来的 AddTodoSheet
 class TaskSheet extends StatefulWidget {
   final Todo? initialTodo;
   final Function(Todo) onSave;
+  final Function(String)? onDelete; 
 
-  const TaskSheet({super.key, this.initialTodo, required this.onSave});
+  const TaskSheet({
+    super.key, 
+    this.initialTodo, 
+    required this.onSave,  
+    this.onDelete, 
+  });
 
   @override
   State<TaskSheet> createState() => _TaskSheetState();
@@ -530,27 +289,41 @@ class _TaskSheetState extends State<TaskSheet> {
   }
 
   void _handleDelete() {
+    // 如果没有删除回调或没有初始任务，直接返回
+    if (widget.onDelete == null || widget.initialTodo == null) {
+      return;
+    }
+
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('删除任务'),
-            content: const Text('确定要删除这个任务吗？'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // 关闭对话框
-                  Navigator.pop(context); // 关闭编辑表单
-                  // TODO: 实现删除功能
-                },
-                child: const Text('删除', style: TextStyle(color: Colors.red)),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text(
+          '删除任务',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          '确定要删除这个任务吗？',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // 关闭对话框
+              Navigator.pop(context); // 关闭编辑表单
+              widget.onDelete!(widget.initialTodo!.id);// 调用删除方法(使用非空断言，因为我们已经检查过了)
+            },
+            child: const Text(
+              '删除',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -678,7 +451,7 @@ class _TaskSheetState extends State<TaskSheet> {
         children: [
           Row(
             children: [
-              if (isEditing) 
+              if (isEditing && widget.onDelete != null) // 添加条件检查
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
                   onPressed: _handleDelete,
