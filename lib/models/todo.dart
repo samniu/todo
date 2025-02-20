@@ -1,4 +1,3 @@
-// lib/models/todo.dart
 import 'package:uuid/uuid.dart';
 
 class Todo {
@@ -9,8 +8,8 @@ class Todo {
   bool isFavorite;
   DateTime createdAt;
   DateTime? dueDate;
-  String? listId;  // 用于分类任务列表
-  int? position;   // 用于任务排序
+  String? listId;
+  int? position;
 
   Todo({
     String? id,
@@ -26,7 +25,6 @@ class Todo {
     id = id ?? const Uuid().v4(),
     createdAt = createdAt ?? DateTime.now();
 
-  // 从 JSON 创建 Todo 对象
   factory Todo.fromJson(Map<String, dynamic> json) {
     return Todo(
       id: json['id'] as String,
@@ -43,7 +41,6 @@ class Todo {
     );
   }
 
-  // 转换为 JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -58,7 +55,6 @@ class Todo {
     };
   }
 
-  // 复制 Todo 对象并修改指定属性
   Todo copyWith({
     String? title,
     String? description,
@@ -78,53 +74,6 @@ class Todo {
       dueDate: dueDate ?? this.dueDate,
       listId: listId ?? this.listId,
       position: position ?? this.position,
-    );
-  }
-}
-
-// lib/models/todo_list.dart
-class TodoList {
-  final String id;
-  String name;
-  String? icon;
-  DateTime createdAt;
-  
-  TodoList({
-    String? id,
-    required this.name,
-    this.icon,
-    DateTime? createdAt,
-  }) : 
-    id = id ?? const Uuid().v4(),
-    createdAt = createdAt ?? DateTime.now();
-
-  factory TodoList.fromJson(Map<String, dynamic> json) {
-    return TodoList(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      icon: json['icon'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'icon': icon,
-      'createdAt': createdAt.toIso8601String(),
-    };
-  }
-
-  TodoList copyWith({
-    String? name,
-    String? icon,
-  }) {
-    return TodoList(
-      id: id,
-      name: name ?? this.name,
-      icon: icon ?? this.icon,
-      createdAt: createdAt,
     );
   }
 }
