@@ -9,7 +9,10 @@ import '../widgets/task_sheet.dart';
 class MyDayPage extends StatefulWidget {
   final StorageService storageService;
 
-  const MyDayPage({super.key, required this.storageService});
+  const MyDayPage({
+    super.key,
+    required this.storageService,
+  });
 
   @override
   State<MyDayPage> createState() => _MyDayPageState();
@@ -52,7 +55,10 @@ class _MyDayPageState extends State<MyDayPage> {
       await widget.storageService.saveTodos(_todos);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('保存失败，请重试'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('保存失败，请重试'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -110,12 +116,11 @@ class _MyDayPageState extends State<MyDayPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder:
-          (context) => TaskSheet(
-            initialTodo: todo,
-            onSave: todo == null ? _addTodo : _editTodo,
-            onDelete: todo == null ? null : _deleteTodo,
-          ),
+      builder: (context) => TaskSheet(
+        initialTodo: todo,
+        onSave: todo == null ? _addTodo : _editTodo,
+        onDelete: todo == null ? null : _deleteTodo,
+      ),
     );
   }
 
@@ -123,159 +128,165 @@ class _MyDayPageState extends State<MyDayPage> {
     setState(() {
       _showingQuickAdd = true;
     });
-    // FocusScope.of(context).requestFocus(_quickAddFocusNode);
-    // 添加一个短暂延迟以确保 TextField 已经构建完成
+    
     Future.delayed(const Duration(milliseconds: 50), () {
-      FocusScope.of(context).requestFocus(_quickAddFocusNode);
-    });    
+      if (!_quickAddFocusNode.hasFocus) {
+        FocusScope.of(context).requestFocus(_quickAddFocusNode);
+      }
+    });
   }
 
   void _hideQuickAdd() {
     if (_showingQuickAdd) {
+      FocusManager.instance.primaryFocus?.unfocus();
       setState(() {
         _showingQuickAdd = false;
       });
-      FocusManager.instance.primaryFocus?.unfocus();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _hideQuickAdd,
-      child:Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // TODO: Implement navigation
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.lightbulb_outline),
             onPressed: () {
-              // TODO: Implement navigation
+              // TODO: Implement suggestions
             },
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.lightbulb_outline),
-              onPressed: () {
-                // TODO: Implement suggestions
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.more_vert),
-              onPressed: () {
-                // TODO: Implement menu
-              },
-            ),
-          ],
-        ),
-        body: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: NetworkImage('https://picsum.photos/seed/picsum/600/800'),
-              fit: BoxFit.cover,
-            ),
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () {
+              // TODO: Implement menu
+            },
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.3),
-                  Colors.black.withOpacity(0.5),
-                ],
+        ],
+      ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: NetworkImage('https://picsum.photos/seed/picsum/600/800'),
+                fit: BoxFit.cover,
               ),
             ),
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'My Day',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          DateFormat('EEEE, MMMM d').format(DateTime.now()),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child:
-                        _isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : TodoList(
-                              todos: _todos,
-                              onToggle: _toggleTodo,
-                              onToggleFavorite: _toggleFavorite,
-                              onEdit: _showTaskSheet,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.5),
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'My Day',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                  ),
-                  // 快速添加任务
-                  if (_showingQuickAdd)
-                    QuickAddTask(
-                      focusNode: _quickAddFocusNode,
-                      onSave: (todo) {
-                        _addTodo(todo);
-                        _hideQuickAdd();
-                        setState(() {
-                          _showingQuickAdd = false;
-                        });
-                      },
-                      onCancel: () {
-                        _hideQuickAdd();
-                        setState(() {
-                          _showingQuickAdd = false;
-                        });
-                      },
-                    )
-                  else
-                    // 添加任务按钮
-                    Material(
-                      color: Colors.black.withOpacity(0.7),
-                      child: InkWell(
-                        onTap: _showQuickAdd,
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.add_circle_outline,
-                                color: Colors.white70,
-                                size: 24,
-                              ),
-                              const SizedBox(width: 16),
-                              const Text(
-                                'Add a Task',
-                                style: TextStyle(
+                          ),
+                          Text(
+                            DateFormat('EEEE, MMMM d').format(DateTime.now()),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: TodoList(
+                        todos: _todos,
+                        onToggle: _toggleTodo,
+                        onToggleFavorite: _toggleFavorite,
+                        onEdit: _showTaskSheet,
+                      ),
+                    ),
+                    if (!_showingQuickAdd)
+                      Material(
+                        color: Colors.black.withOpacity(0.7),
+                        child: InkWell(
+                          onTap: _showQuickAdd,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.add_circle_outline,
                                   color: Colors.white70,
-                                  fontSize: 16,
+                                  size: 24,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 16),
+                                const Text(
+                                  'Add a Task',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
+          if (_showingQuickAdd) ...[
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _hideQuickAdd,
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onTap: () {}, // 阻止点击事件传播
+                child: QuickAddTask(
+                  focusNode: _quickAddFocusNode,
+                  onSave: (todo) {
+                    _addTodo(todo);
+                    _hideQuickAdd();
+                  },
+                  onCancel: _hideQuickAdd,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

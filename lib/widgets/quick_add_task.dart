@@ -49,10 +49,12 @@ class _QuickAddTaskState extends State<QuickAddTask> {
       title: title,
       dueDate: _dueDate,
     ));
-
+    
+    FocusManager.instance.primaryFocus?.unfocus();
     _titleController.clear();
     setState(() {
       _dueDate = null;
+      _showDatePicker = false;
     });
   }
 
@@ -119,17 +121,16 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                   child: TextField(
                     controller: _titleController,
                     focusNode: widget.focusNode,
-                    // autofocus: true, 
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       hintText: 'Add a Task',
                       hintStyle: TextStyle(color: Colors.white54),
                       border: InputBorder.none,
                     ),
-                    onSubmitted: (_) => _handleSubmit(),
-                    onTapOutside: (_) {
+                    onSubmitted: (_) {
+                      _handleSubmit();
                       widget.onCancel();
-                    },                                        
+                    },
                   ),
                 ),
               ],
@@ -146,8 +147,7 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.notifications_none,
-                      color: Colors.white70),
+                  icon: const Icon(Icons.notifications_none, color: Colors.white70),
                   onPressed: () {
                     // TODO: Implement reminder
                   },
