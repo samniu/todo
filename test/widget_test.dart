@@ -16,7 +16,6 @@ void main() {
     // 创建一个 MockStorageService
     final storageService = await StorageService.init();
     
-    // 构建我们的应用并触发一个frame
     await tester.pumpWidget(MyApp(storageService: storageService));
 
     // Verify that our counter starts at 0.
