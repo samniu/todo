@@ -37,8 +37,16 @@ class _QuickAddTaskState extends State<QuickAddTask> {
 
   void _showDatePickerSheet() {
     setState(() {
-      _showDatePicker = true;
+      _showDatePicker = !_showDatePicker;
     });
+  }
+
+  void _closeDatePicker() {
+    if (_showDatePicker) {
+      setState(() {
+        _showDatePicker = false;
+      });
+    }
   }
 
   void _handleSubmit() {
@@ -70,6 +78,23 @@ class _QuickAddTaskState extends State<QuickAddTask> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Choose date',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                        onPressed: _closeDatePicker,
+                      ),
+                    ],
+                  ),
                   ListTile(
                     leading: const Icon(Icons.today, color: Colors.white70),
                     title: const Text('Today',
@@ -98,17 +123,38 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                     title: const Text('Pick a date',
                         style: TextStyle(color: Colors.white)),
                     trailing: const Icon(Icons.chevron_right, color: Colors.white70),
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2025),
-                      );
-                      if (picked != null) {
-                        _handleQuickDate(picked);
-                      }
-                    },
+                  onTap: () async {
+                    final now = DateTime.now();
+                    final lastDate = DateTime(now.year + 1, now.month, now.day); // 设置为一年后
+                    
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: now,
+                      firstDate: now,
+                      lastDate: lastDate, // 使用动态计算的结束日期
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: const ColorScheme.dark(
+                              primary: Colors.tealAccent,
+                              onPrimary: Colors.black,
+                              surface: Colors.black87,
+                              onSurface: Colors.white,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    
+                    if (picked != null) {
+                      _handleQuickDate(picked);
+                    } else {
+                      setState(() {
+                        _showDatePicker = false;
+                      });
+                    }
+                  },
                   ),
                 ],
               ),
