@@ -12,10 +12,7 @@ void main() async {
 class MyApp extends StatelessWidget {
   final StorageService storageService;
 
-  const MyApp({
-    super.key,
-    required this.storageService,
-  });
+  const MyApp({super.key, required this.storageService});
 
   @override
   Widget build(BuildContext context) {
@@ -36,10 +33,7 @@ class MyApp extends StatelessWidget {
 class MyDayPage extends StatefulWidget {
   final StorageService storageService;
 
-  const MyDayPage({
-    super.key,
-    required this.storageService,
-  });
+  const MyDayPage({super.key, required this.storageService});
 
   @override
   State<MyDayPage> createState() => _MyDayPageState();
@@ -76,10 +70,7 @@ class _MyDayPageState extends State<MyDayPage> {
     } catch (e) {
       // TODO: 添加错误处理
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('保存失败，请重试'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('保存失败，请重试'), backgroundColor: Colors.red),
       );
     }
   }
@@ -108,33 +99,34 @@ class _MyDayPageState extends State<MyDayPage> {
     });
   }
 
-  void _addTodo({
-    required String title,
-    DateTime? dueDate,
-    DateTime? reminderTime,
-    bool isFavorite = false,
-    String? description,
-  }) {
+  void _editTodo(Todo todo) {
     setState(() {
-      _todos.add(Todo(
-        title: title,
-        createdAt: DateTime.now(),
-        dueDate: dueDate,
-        isFavorite: isFavorite,
-        description: description,
-      ));
-      _saveTodos();
+      final index = _todos.indexWhere((t) => t.id == todo.id);
+      if (index != -1) {
+        _todos[index] = todo;
+        _saveTodos();
+      }
     });
-  } 
-
-    void _showAddTodoSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AddTodoSheet(onAdd: _addTodo),
-    );
   }
+
+void _addTodo(Todo todo) {
+  setState(() {
+    _todos.add(todo);
+    _saveTodos();
+  });
+}
+
+void _showTaskSheet([Todo? todo]) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => TaskSheet(
+      initialTodo: todo,
+      onSave: todo == null ? _addTodo : _editTodo,
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -210,15 +202,15 @@ class _MyDayPageState extends State<MyDayPage> {
                   ),
                 ),
                 Expanded(
-                  child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : TodoList(
-                          todos: _todos,
-                          onToggle: _toggleTodo,
-                          onToggleFavorite: _toggleFavorite,
-                        ),
+                  child:
+                      _isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : TodoList(
+                            todos: _todos,
+                            onToggle: _toggleTodo,
+                            onToggleFavorite: _toggleFavorite,
+                            onEdit: _showTaskSheet, 
+                          ),
                 ),
               ],
             ),
@@ -226,14 +218,13 @@ class _MyDayPageState extends State<MyDayPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddTodoSheet,
+        onPressed: _showTaskSheet,
         child: const Icon(Icons.add),
       ),
-
     );
   }
 }
-
+/*
 class AddTodoSheet extends StatefulWidget {
   final Function({
     required String title,
@@ -241,12 +232,10 @@ class AddTodoSheet extends StatefulWidget {
     DateTime? reminderTime,
     bool isFavorite,
     String? description,
-  }) onAdd;
+  })
+  onAdd;
 
-  const AddTodoSheet({
-    super.key,
-    required this.onAdd,
-  });
+  const AddTodoSheet({super.key, required this.onAdd});
 
   @override
   State<AddTodoSheet> createState() => _AddTodoSheetState();
@@ -258,7 +247,7 @@ class _AddTodoSheetState extends State<AddTodoSheet> {
   bool _showError = false;
   DateTime? _dueDate;
   TimeOfDay? _dueTime;
-  bool _isFavorite = false;  
+  bool _isFavorite = false;
 
   @override
   void dispose() {
@@ -350,9 +339,10 @@ class _AddTodoSheetState extends State<AddTodoSheet> {
       title: title,
       dueDate: _combinedDateTime,
       isFavorite: _isFavorite,
-      description: _descriptionController.text.trim().isEmpty 
-          ? null 
-          : _descriptionController.text.trim(),
+      description:
+          _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
     );
     Navigator.pop(context);
   }
@@ -360,16 +350,14 @@ class _AddTodoSheetState extends State<AddTodoSheet> {
   String _formatDateTime() {
     if (_dueDate == null) return '';
     final date = DateFormat('MM月dd日').format(_dueDate!);
-    final time = _dueTime != null 
-        ? ' ${_dueTime!.format(context)}' 
-        : '';
+    final time = _dueTime != null ? ' ${_dueTime!.format(context)}' : '';
     return '$date$time';
   }
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.black87,
@@ -413,8 +401,8 @@ class _AddTodoSheetState extends State<AddTodoSheet> {
               fillColor: Colors.white12,
               errorText: _showError ? '请输入任务内容' : null,
               prefixIcon: const Icon(
-                Icons.check_circle_outline, 
-                color: Colors.white70
+                Icons.check_circle_outline,
+                color: Colors.white70,
               ),
             ),
             onChanged: (value) {
@@ -483,9 +471,333 @@ class _AddTodoSheetState extends State<AddTodoSheet> {
                 child: const Text('取消'),
               ),
               const SizedBox(width: 8),
+              ElevatedButton(onPressed: _handleSubmit, child: const Text('添加')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+*/
+// 重命名并改进原来的 AddTodoSheet
+class TaskSheet extends StatefulWidget {
+  final Todo? initialTodo;
+  final Function(Todo) onSave;
+
+  const TaskSheet({super.key, this.initialTodo, required this.onSave});
+
+  @override
+  State<TaskSheet> createState() => _TaskSheetState();
+}
+
+class _TaskSheetState extends State<TaskSheet> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
+  late bool _isFavorite;
+  late DateTime? _dueDate;
+  late TimeOfDay? _dueTime;
+  bool _showError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 初始化状态
+    final todo = widget.initialTodo;
+    _titleController = TextEditingController(text: todo?.title ?? '');
+    _descriptionController = TextEditingController(
+      text: todo?.description ?? '',
+    );
+    _isFavorite = todo?.isFavorite ?? false;
+
+    if (todo?.dueDate != null) {
+      _dueDate = todo!.dueDate;
+      _dueTime = TimeOfDay(
+        hour: todo.dueDate!.hour,
+        minute: todo.dueDate!.minute,
+      );
+    } else {
+      _dueDate = null;
+      _dueTime = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  void _handleDelete() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('删除任务'),
+            content: const Text('确定要删除这个任务吗？'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // 关闭对话框
+                  Navigator.pop(context); // 关闭编辑表单
+                  // TODO: 实现删除功能
+                },
+                child: const Text('删除', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _clearDueDate() {
+    setState(() {
+      _dueDate = null;
+      _dueTime = null;
+    });
+  }
+
+  void _handleSave() {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      setState(() {
+        _showError = true;
+      });
+      return;
+    }
+
+    final todo = (widget.initialTodo ?? Todo(title: '')).copyWith(
+      title: title,
+      description:
+          _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
+      dueDate: _combinedDateTime,
+      isFavorite: _isFavorite,
+    );
+
+    widget.onSave(todo);
+    Navigator.pop(context);
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dueDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.tealAccent,
+              onPrimary: Colors.black,
+              surface: Colors.black87,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _dueDate = picked;
+      });
+      // 如果选择了日期但还没有时间，显示时间选择器
+      if (_dueTime == null) {
+        _selectTime();
+      }
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _dueTime ?? TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.tealAccent,
+              onPrimary: Colors.black,
+              surface: Colors.black87,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _dueTime = picked;
+      });
+    }
+  }
+
+  DateTime? get _combinedDateTime {
+    if (_dueDate == null) return null;
+    if (_dueTime == null) return _dueDate;
+    return DateTime(
+      _dueDate!.year,
+      _dueDate!.month,
+      _dueDate!.day,
+      _dueTime!.hour,
+      _dueTime!.minute,
+    );
+  }
+
+  String _formatDateTime() {
+    if (_dueDate == null) return '';
+    final date = DateFormat('MM月dd日').format(_dueDate!);
+    final time = _dueTime != null ? ' ${_dueTime!.format(context)}' : '';
+    return '$date$time';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isEditing = widget.initialTodo != null;
+    
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              if (isEditing) 
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: _handleDelete,
+                ),
+              Expanded(
+                child: Text(
+                  isEditing ? '编辑任务' : '添加任务',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _titleController,
+            autofocus: !isEditing,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: '输入任务内容...',
+              hintStyle: const TextStyle(color: Colors.white54),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              filled: true,
+              fillColor: Colors.white12,
+              errorText: _showError ? '请输入任务内容' : null,
+              prefixIcon: const Icon(
+                Icons.check_circle_outline,
+                color: Colors.white70,
+              ),
+            ),
+            onChanged: (value) {
+              if (_showError && value.trim().isNotEmpty) {
+                setState(() {
+                  _showError = false;
+                });
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _descriptionController,
+            style: const TextStyle(color: Colors.white),
+            maxLines: 2,
+            decoration: InputDecoration(
+              hintText: '添加备注...',
+              hintStyle: const TextStyle(color: Colors.white54),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              filled: true,
+              fillColor: Colors.white12,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ActionChip(
+                avatar: const Icon(Icons.calendar_today, size: 18),
+                label: Text(
+                  _dueDate == null ? '添加截止日期' : _formatDateTime(),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                backgroundColor: Colors.white12,
+                onPressed: _selectDate,
+              ),
+              if (_dueDate != null)
+                ActionChip(
+                  avatar: const Icon(Icons.close, size: 18),
+                  label: const Text(
+                    '清除日期',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: Colors.white12,
+                  onPressed: _clearDueDate,
+                ),
+              ActionChip(
+                avatar: Icon(
+                  _isFavorite ? Icons.star : Icons.star_border,
+                  size: 18,
+                  color: _isFavorite ? Colors.amber : null,
+                ),
+                label: Text(
+                  _isFavorite ? '已标记重要' : '标记为重要',
+                  style: TextStyle(
+                    color: _isFavorite ? Colors.amber : Colors.white,
+                  ),
+                ),
+                backgroundColor: Colors.white12,
+                onPressed: () {
+                  setState(() {
+                    _isFavorite = !_isFavorite;
+                  });
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: _handleSubmit,
-                child: const Text('添加'),
+                onPressed: _handleSave,
+                child: Text(isEditing ? '保存' : '添加'),
               ),
             ],
           ),
@@ -499,12 +811,14 @@ class TodoList extends StatelessWidget {
   final List<Todo> todos;
   final Function(String) onToggle;
   final Function(String) onToggleFavorite;
+  final Function(Todo) onEdit; 
 
   const TodoList({
     super.key,
     required this.todos,
     required this.onToggle,
     required this.onToggleFavorite,
+    required this.onEdit,
   });
 
   @override
@@ -517,11 +831,14 @@ class TodoList extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         // 未完成的任务
-        ...incompleteTodos.map((todo) => TodoItem(
-              todo: todo,
-              onToggle: onToggle,
-              onToggleFavorite: onToggleFavorite,
-            )),
+        ...incompleteTodos.map(
+          (todo) => TodoItem(
+            todo: todo,
+            onToggle: onToggle,
+            onToggleFavorite: onToggleFavorite,
+            onEdit: onEdit, 
+          ),
+        ),
         // 如果有已完成的任务，显示分隔符和标题
         if (completedTodos.isNotEmpty) ...[
           const Padding(
@@ -535,11 +852,14 @@ class TodoList extends StatelessWidget {
               ),
             ),
           ),
-          ...completedTodos.map((todo) => TodoItem(
-                todo: todo,
-                onToggle: onToggle,
-                onToggleFavorite: onToggleFavorite,
-              )),
+          ...completedTodos.map(
+            (todo) => TodoItem(
+              todo: todo,
+              onToggle: onToggle,
+              onToggleFavorite: onToggleFavorite,
+              onEdit: onEdit, 
+            ),
+          ),
         ],
       ],
     );
@@ -550,45 +870,52 @@ class TodoItem extends StatelessWidget {
   final Todo todo;
   final Function(String) onToggle;
   final Function(String) onToggleFavorite;
+  final Function(Todo) onEdit;
 
   const TodoItem({
     super.key,
     required this.todo,
     required this.onToggle,
     required this.onToggleFavorite,
+    required this.onEdit,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       color: Colors.black.withOpacity(0.7),
-      child: ListTile(
-        leading: Checkbox(
-          value: todo.isCompleted,
-          onChanged: (value) => onToggle(todo.id),
-        ),
-        title: Text(
-          todo.title,
-          style: TextStyle(
-            color: Colors.white,
-            decoration: todo.isCompleted ? TextDecoration.lineThrough : null,
-            decorationColor: Colors.white54,
+      child: InkWell(  // 添加 InkWell 以支持点击效果
+        onTap: () => onEdit(todo),  // 点击整个卡片时进入编辑
+        child: ListTile(
+          leading: Checkbox(
+            value: todo.isCompleted,
+            onChanged: (value) => onToggle(todo.id),
           ),
-        ),
-        subtitle: Text(
-          'Today',
-          style: TextStyle(
-            color: Colors.white70,
-            decoration: todo.isCompleted ? TextDecoration.lineThrough : null,
-            decorationColor: Colors.white54,
+          title: Text(
+            todo.title,
+            style: TextStyle(
+              color: Colors.white,
+              decoration: todo.isCompleted ? TextDecoration.lineThrough : null,
+              decorationColor: Colors.white54,
+            ),
           ),
-        ),
-        trailing: IconButton(
-          icon: Icon(
-            todo.isFavorite ? Icons.star : Icons.star_border,
-            color: todo.isFavorite ? Colors.amber : Colors.white70,
+          subtitle: Text(
+            todo.dueDate != null 
+                ? DateFormat('MM月dd日 HH:mm').format(todo.dueDate!)
+                : 'Today',
+            style: TextStyle(
+              color: Colors.white70,
+              decoration: todo.isCompleted ? TextDecoration.lineThrough : null,
+              decorationColor: Colors.white54,
+            ),
           ),
-          onPressed: () => onToggleFavorite(todo.id),
+          trailing: IconButton(
+            icon: Icon(
+              todo.isFavorite ? Icons.star : Icons.star_border,
+              color: todo.isFavorite ? Colors.amber : Colors.white70,
+            ),
+            onPressed: () => onToggleFavorite(todo.id),
+          ),
         ),
       ),
     );
