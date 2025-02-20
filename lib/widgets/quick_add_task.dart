@@ -119,6 +119,7 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                   child: TextField(
                     controller: _titleController,
                     focusNode: widget.focusNode,
+                    // autofocus: true, 
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       hintText: 'Add a Task',
@@ -126,6 +127,9 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                       border: InputBorder.none,
                     ),
                     onSubmitted: (_) => _handleSubmit(),
+                    onTapOutside: (_) {
+                      widget.onCancel();
+                    },                                        
                   ),
                 ),
               ],
