@@ -6,14 +6,12 @@ import '../widgets/todo_list.dart';
 import '../widgets/quick_add_task.dart';
 import '../widgets/task_sheet.dart';
 import '../utils/date_formatter.dart';
+import 'task_detail_page.dart';
 
 class MyDayPage extends StatefulWidget {
   final StorageService storageService;
 
-  const MyDayPage({
-    super.key,
-    required this.storageService,
-  });
+  const MyDayPage({super.key, required this.storageService});
 
   @override
   State<MyDayPage> createState() => _MyDayPageState();
@@ -58,10 +56,7 @@ class _MyDayPageState extends State<MyDayPage> {
       await widget.storageService.saveTodos(_todos);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('保存失败，请重试'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('保存失败，请重试'), backgroundColor: Colors.red),
       );
     }
   }
@@ -119,10 +114,25 @@ class _MyDayPageState extends State<MyDayPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => TaskSheet(
-        initialTodo: todo,
-        onSave: todo == null ? _addTodo : _editTodo,
-        onDelete: todo == null ? null : _deleteTodo,
+      builder:
+          (context) => TaskSheet(
+            initialTodo: todo,
+            onSave: todo == null ? _addTodo : _editTodo,
+            onDelete: todo == null ? null : _deleteTodo,
+          ),
+    );
+  }
+
+  void _onTaskTap(Todo todo) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => TaskDetailPage(
+              todo: todo,
+              onSave: _editTodo,
+              onDelete: _deleteTodo,
+            ),
       ),
     );
   }
@@ -132,7 +142,7 @@ class _MyDayPageState extends State<MyDayPage> {
       _showingQuickAdd = true;
       _showingDatePicker = false;
     });
-    
+
     Future.delayed(const Duration(milliseconds: 50), () {
       if (!_quickAddFocusNode.hasFocus) {
         FocusScope.of(context).requestFocus(_quickAddFocusNode);
@@ -202,10 +212,7 @@ class _MyDayPageState extends State<MyDayPage> {
                 TextButton(
                   child: const Text(
                     'Done',
-                    style: TextStyle(
-                      color: Colors.blue,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.blue, fontSize: 16),
                   ),
                   onPressed: () => _hideDatePickerPage(null),
                 ),
@@ -214,10 +221,7 @@ class _MyDayPageState extends State<MyDayPage> {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_today, color: Colors.white70),
-            title: const Text(
-              'Today',
-              style: TextStyle(color: Colors.white),
-            ),
+            title: const Text('Today', style: TextStyle(color: Colors.white)),
             trailing: Text(
               DateFormatter.getDayName(now),
               style: TextStyle(color: Colors.white.withOpacity(0.5)),
@@ -258,7 +262,7 @@ class _MyDayPageState extends State<MyDayPage> {
             onTap: () async {
               final now = DateTime.now();
               final lastDate = DateTime(now.year + 1, now.month, now.day);
-              
+
               final picked = await showDatePicker(
                 context: context,
                 initialDate: now,
@@ -322,7 +326,9 @@ class _MyDayPageState extends State<MyDayPage> {
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage('https://picsum.photos/seed/picsum/600/800'),
+                image: NetworkImage(
+                  'https://picsum.photos/seed/picsum/600/800',
+                ),
                 fit: BoxFit.cover,
               ),
             ),
@@ -369,7 +375,18 @@ class _MyDayPageState extends State<MyDayPage> {
                         todos: _todos,
                         onToggle: _toggleTodo,
                         onToggleFavorite: _toggleFavorite,
-                        onEdit: _showTaskSheet,
+                        onTaskTap: (todo) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TaskDetailPage(
+                                todo: todo,
+                                onSave: _editTodo,
+                                onDelete: _deleteTodo,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     if (!_showingQuickAdd && !_showingDatePicker)
@@ -409,9 +426,7 @@ class _MyDayPageState extends State<MyDayPage> {
             Positioned.fill(
               child: GestureDetector(
                 onTap: _hideQuickAdd,
-                child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                ),
+                child: Container(color: Colors.black.withOpacity(0.5)),
               ),
             ),
           // 快速添加任务面板
@@ -421,7 +436,7 @@ class _MyDayPageState extends State<MyDayPage> {
               right: 0,
               bottom: 0,
               child: GestureDetector(
-                onTap: () {},  // 防止点击事件穿透
+                onTap: () {}, // 防止点击事件穿透
                 child: QuickAddTask(
                   focusNode: _quickAddFocusNode,
                   selectedDate: _selectedDate,
@@ -441,7 +456,7 @@ class _MyDayPageState extends State<MyDayPage> {
               right: 0,
               bottom: 0,
               child: GestureDetector(
-                onTap: () {},  // 防止点击事件穿透
+                onTap: () {}, // 防止点击事件穿透
                 child: _buildDatePickerPage(),
               ),
             ),

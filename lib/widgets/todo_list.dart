@@ -2,82 +2,52 @@ import 'package:flutter/material.dart';
 import '../models/todo.dart';
 import 'todo_item.dart';
 
-class TodoList extends StatefulWidget {
+class TodoList extends StatelessWidget {
   final List<Todo> todos;
   final Function(String) onToggle;
   final Function(String) onToggleFavorite;
-  final Function(Todo) onEdit;
+  final Function(Todo) onTaskTap;  // 更改为 onTaskTap
 
   const TodoList({
     super.key,
     required this.todos,
     required this.onToggle,
     required this.onToggleFavorite,
-    required this.onEdit,
+    required this.onTaskTap,  // 更新参数名
   });
 
   @override
-  State<TodoList> createState() => _TodoListState();
-}
-
-class _TodoListState extends State<TodoList> {
-  bool _showCompleted = true;
-
-  @override
   Widget build(BuildContext context) {
-    final incompleteTodos = widget.todos.where((todo) => !todo.isCompleted).toList();
-    final completedTodos = widget.todos.where((todo) => todo.isCompleted).toList();
+    final incompleteTodos = todos.where((todo) => !todo.isCompleted).toList();
+    final completedTodos = todos.where((todo) => todo.isCompleted).toList();
 
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
       children: [
-        // 未完成的任务
         ...incompleteTodos.map((todo) => TodoItem(
               todo: todo,
-              onToggle: widget.onToggle,
-              onToggleFavorite: widget.onToggleFavorite,
-              onEdit: widget.onEdit,
+              onToggle: onToggle,
+              onToggleFavorite: onToggleFavorite,
+              onTap: onTaskTap,  // 更新参数名
             )),
-        // 已完成的任务头部
         if (completedTodos.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: () {
-              setState(() {
-                _showCompleted = !_showCompleted;
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                children: [
-                  Icon(
-                    _showCompleted
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: Colors.white70,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '已完成 ${completedTodos.length}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: Text(
+              '已完成',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          // 已完成的任务列表（可折叠）
-          if (_showCompleted) 
-            ...completedTodos.map((todo) => TodoItem(
-                  todo: todo,
-                  onToggle: widget.onToggle,
-                  onToggleFavorite: widget.onToggleFavorite,
-                  onEdit: widget.onEdit,
-                )),
+          ...completedTodos.map((todo) => TodoItem(
+                todo: todo,
+                onToggle: onToggle,
+                onToggleFavorite: onToggleFavorite,
+                onTap: onTaskTap,  // 更新参数名
+              )),
         ],
       ],
     );
