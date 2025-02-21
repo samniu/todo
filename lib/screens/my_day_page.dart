@@ -393,6 +393,7 @@ class _MyDayPageState extends State<MyDayPage> {
                       Material(
                         color: Colors.black.withOpacity(0.7),
                         child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
                           onTap: _showQuickAdd,
                           child: Container(
                             padding: const EdgeInsets.all(16),
