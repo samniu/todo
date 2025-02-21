@@ -73,6 +73,60 @@ class _MyDayPageState extends State<MyDayPage> {
     });
   }
 
+  void _editTodo(Todo todo) {
+    setState(() {
+      final index = _todos.indexWhere((t) => t.id == todo.id);
+      if (index != -1) {
+        _todos[index] = todo;
+        _saveTodos();
+      }
+    });
+  }
+
+  void _deleteTodo(String id) {
+    setState(() {
+      _todos.removeWhere((todo) => todo.id == id);
+      _saveTodos();
+    });
+  }
+
+  void _toggleTodo(String id) {
+    setState(() {
+      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
+      if (todoIndex != -1) {
+        _todos[todoIndex] = _todos[todoIndex].copyWith(
+          isCompleted: !_todos[todoIndex].isCompleted,
+        );
+        _saveTodos();
+      }
+    });
+  }
+
+  void _toggleFavorite(String id) {
+    setState(() {
+      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
+      if (todoIndex != -1) {
+        _todos[todoIndex] = _todos[todoIndex].copyWith(
+          isFavorite: !_todos[todoIndex].isFavorite,
+        );
+        _saveTodos();
+      }
+    });
+  }
+
+  void _showTaskSheet([Todo? todo]) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TaskSheet(
+        initialTodo: todo,
+        onSave: todo == null ? _addTodo : _editTodo,
+        onDelete: todo == null ? null : _deleteTodo,
+      ),
+    );
+  }
+
   void _showQuickAdd() {
     setState(() {
       _showingQuickAdd = true;
@@ -115,60 +169,6 @@ class _MyDayPageState extends State<MyDayPage> {
       if (!_quickAddFocusNode.hasFocus) {
         FocusScope.of(context).requestFocus(_quickAddFocusNode);
       }
-    });
-  }
-
-    void _toggleTodo(String id) {
-    setState(() {
-      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
-      if (todoIndex != -1) {
-        _todos[todoIndex] = _todos[todoIndex].copyWith(
-          isCompleted: !_todos[todoIndex].isCompleted,
-        );
-        _saveTodos();
-      }
-    });
-  }
-
-  void _toggleFavorite(String id) {
-    setState(() {
-      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
-      if (todoIndex != -1) {
-        _todos[todoIndex] = _todos[todoIndex].copyWith(
-          isFavorite: !_todos[todoIndex].isFavorite,
-        );
-        _saveTodos();
-      }
-    });
-  }
-
-  void _showTaskSheet([Todo? todo]) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => TaskSheet(
-        initialTodo: todo,
-        onSave: todo == null ? _addTodo : _editTodo,
-        onDelete: todo == null ? null : _deleteTodo,
-      ),
-    );
-  }
-
-    void _editTodo(Todo todo) {
-    setState(() {
-      final index = _todos.indexWhere((t) => t.id == todo.id);
-      if (index != -1) {
-        _todos[index] = todo;
-        _saveTodos();
-      }
-    });
-  }
-
-  void _deleteTodo(String id) {
-    setState(() {
-      _todos.removeWhere((todo) => todo.id == id);
-      _saveTodos();
     });
   }
 
@@ -399,28 +399,46 @@ class _MyDayPageState extends State<MyDayPage> {
               ),
             ),
           ),
+          // 遮罩层
+          if (_showingQuickAdd || _showingDatePicker)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _hideQuickAdd,
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                ),
+              ),
+            ),
+          // 快速添加任务面板
           if (_showingQuickAdd && !_showingDatePicker)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: QuickAddTask(
-                focusNode: _quickAddFocusNode,
-                selectedDate: _selectedDate,
-                onSave: (todo) {
-                  _addTodo(todo);
-                  _hideQuickAdd();
-                },
-                onCancel: _hideQuickAdd,
-                onDateSelect: _showDatePickerPage,
+              child: GestureDetector(
+                onTap: () {},  // 防止点击事件穿透
+                child: QuickAddTask(
+                  focusNode: _quickAddFocusNode,
+                  selectedDate: _selectedDate,
+                  onSave: (todo) {
+                    _addTodo(todo);
+                    _hideQuickAdd();
+                  },
+                  onCancel: _hideQuickAdd,
+                  onDateSelect: _showDatePickerPage,
+                ),
               ),
             ),
+          // 日期选择面板
           if (_showingDatePicker)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: _buildDatePickerPage(),
+              child: GestureDetector(
+                onTap: () {},  // 防止点击事件穿透
+                child: _buildDatePickerPage(),
+              ),
             ),
         ],
       ),
