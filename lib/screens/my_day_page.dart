@@ -392,7 +392,7 @@ class _MyDayPageState extends State<MyDayPage> {
                     if (!_showingQuickAdd && !_showingDatePicker)
                       Material(
                         color: Colors.black.withOpacity(0.7),
-                        child: InkWell(
+                        child: GestureDetector(
                           onTap: _showQuickAdd,
                           child: Container(
                             padding: const EdgeInsets.all(16),
