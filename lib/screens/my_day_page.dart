@@ -177,8 +177,12 @@ class _MyDayPageState extends State<MyDayPage> {
     final tomorrow = now.add(const Duration(days: 1));
     final nextWeek = now.add(const Duration(days: 7));
 
+    // 使用 SafeArea 或者获取底部安全区域高度
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Container(
       color: Colors.black87,
+      padding: EdgeInsets.only(bottom: bottomPadding), // 添加底部安全区域padding
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -279,6 +283,7 @@ class _MyDayPageState extends State<MyDayPage> {
               }
             },
           ),
+          SizedBox(height: 8), // 可选：添加一些额外的底部间距
         ],
       ),
     );
