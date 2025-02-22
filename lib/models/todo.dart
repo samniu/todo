@@ -74,18 +74,27 @@ class Todo {
     String? listId,
     int? position,
     RepeatType? repeatType,
+    bool? clearDescription,  // 标记是否清空 description
+    bool? clearDueDate,      // 标记是否清空 dueDate
+    bool? clearListId,       // 其他可能需要清空的字段
   }) {
     return Todo(
       id: id,
       title: title ?? this.title,
-      description: description ?? this.description,
+      description: clearDescription == true ? null : (description ?? this.description),
       isCompleted: isCompleted ?? this.isCompleted,
       isFavorite: isFavorite ?? this.isFavorite,
       createdAt: createdAt,
-      dueDate: dueDate ?? this.dueDate,
-      listId: listId ?? this.listId,
+      dueDate: clearDueDate == true ? null : (dueDate ?? this.dueDate), // 允许显式清除
+      listId: clearListId == true ? null : (listId ?? this.listId),
       position: position ?? this.position,
       repeatType: repeatType ?? this.repeatType,
     );
+  }
+
+  @override
+  String toString() {
+    return 'Todo(id: $id, title: $title, description: $description,isCompleted: $isCompleted, isFavorite: $isFavorite, '
+           'createdAt: $createdAt, dueDate: $dueDate, listId: $listId, position: $position, repeatType: $repeatType)';
   }
 }
