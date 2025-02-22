@@ -10,6 +10,8 @@ class Messages extends Translations {
       'task_details': 'Task Details',
       'add_task': 'Add a Task',
       'delete_task': 'Delete Task',
+      'note_added': 'Note added',
+      'add_note': 'Add Note',
       
       // Reminder related
       'remind_me': 'Remind Me',
@@ -56,6 +58,8 @@ class Messages extends Translations {
       'task_details': '任务详情',
       'add_task': '添加任务',
       'delete_task': '删除任务',
+      'note_added': '已添加备注',
+      'add_note': '添加备注',
       
       // Reminder related
       'remind_me': '提醒我',

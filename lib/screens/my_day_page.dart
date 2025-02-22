@@ -8,6 +8,8 @@ import '../widgets/task_sheet.dart';
 import '../utils/date_formatter.dart';
 import 'task_detail_page.dart';
 import 'package:get/get.dart';
+import '../controllers/quick_add_controller.dart';
+
 
 
 class MyDayPage extends StatefulWidget {
@@ -20,13 +22,14 @@ class MyDayPage extends StatefulWidget {
 }
 
 class _MyDayPageState extends State<MyDayPage> {
+  final _quickAddController = Get.find<QuickAddController>();
   List<Todo> _todos = [];
   bool _isLoading = true;
   final FocusNode _quickAddFocusNode = FocusNode();
   bool _showingQuickAdd = false;
   bool _showingDatePicker = false;
-  DateTime? _selectedDate;
-  String? _quickAddText;
+  // DateTime? _selectedDate;
+  // String? _quickAddText;
 
   @override
   void initState() {
@@ -157,7 +160,7 @@ class _MyDayPageState extends State<MyDayPage> {
     setState(() {
       _showingQuickAdd = false;
       _showingDatePicker = false;
-      _selectedDate = null;
+      // _selectedDate = null;
     });
     FocusManager.instance.primaryFocus?.unfocus();
   }
@@ -171,12 +174,14 @@ class _MyDayPageState extends State<MyDayPage> {
   }
 
   void _hideDatePickerPage(DateTime? date) {
+    if (date != null) {
+      // _selectedDate = date;
+        _quickAddController.setSelectedDate(date);
+    }
+
     setState(() {
       _showingDatePicker = false;
       _showingQuickAdd = true;
-      if (date != null) {
-        _selectedDate = date;
-      }
     });
     Future.delayed(const Duration(milliseconds: 50), () {
       if (!_quickAddFocusNode.hasFocus) {
@@ -408,13 +413,19 @@ class _MyDayPageState extends State<MyDayPage> {
                                   size: 24,
                                 ),
                                 const SizedBox(width: 16),
-                                Text(
-                                  'add_task'.tr,
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 16,
-                                  ),
-                                ),
+                                // 使用 Obx 监听 title 变化
+                                Obx(() {
+                                  final savedTitle = _quickAddController.title;
+                                  return Text(
+                                    savedTitle.isNotEmpty ? savedTitle : 'add_task'.tr,
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 16,
+                                    ),
+                                    // 添加长文本省略
+                                    overflow: TextOverflow.ellipsis,
+                                  );
+                                }),
                               ],
                             ),
                           ),
@@ -449,15 +460,10 @@ class _MyDayPageState extends State<MyDayPage> {
               child: GestureDetector(
                 onTap: () {}, // 防止点击事件穿透
                 child: QuickAddTask(
-                  focusNode: _quickAddFocusNode,
-                  selectedDate: _selectedDate,
-                  initialText: _quickAddText, 
-                  onTextChanged: (text) {
-                    _quickAddText = text;  // 保存输入的文本
-                  },                  
+                  focusNode: _quickAddFocusNode,                  
                   onSave: (todo) {
                     _addTodo(todo);
-                    _quickAddText = null;
+                    _quickAddController.clearAll(); // 保存后清除状态
                     _hideQuickAdd();
                   },
                   onCancel: _hideQuickAdd,

@@ -3,6 +3,7 @@ import '../models/todo.dart';
 import '../utils/date_formatter.dart';
 import 'note_sheet.dart';
 import 'package:get/get.dart';
+import '../controllers/quick_add_controller.dart';
 
 class QuickAddTask extends StatefulWidget {
   final Function(Todo) onSave;
@@ -20,7 +21,7 @@ class QuickAddTask extends StatefulWidget {
     required this.onDateSelect,
     this.focusNode,
     this.selectedDate,
-    this.initialText, 
+    this.initialText,
     this.onTextChanged,
   });
 
@@ -30,12 +31,14 @@ class QuickAddTask extends StatefulWidget {
 
 class _QuickAddTaskState extends State<QuickAddTask> {
   late TextEditingController _titleController;
-  String? _note;
+  final _quickAddController = Get.find<QuickAddController>();
+  // String? _note;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.initialText);
+    // 从控制器获取保存的数据
+    _titleController = TextEditingController(text: _quickAddController.title);
   }
 
   @override
@@ -57,12 +60,16 @@ class _QuickAddTaskState extends State<QuickAddTask> {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
 
-    widget.onSave(Todo(
-      title: title,
-      dueDate: widget.selectedDate,
-      description: _note,
-    ));  
+    widget.onSave(
+      Todo(
+        title: title,
+        dueDate: widget.selectedDate,
+        description: _quickAddController.note,
+      ),
+    );
 
+    // 清除所有数据
+    _quickAddController.clearAll();
     _titleController.clear();
   }
 
@@ -88,41 +95,49 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                     controller: _titleController,
                     focusNode: widget.focusNode,
                     style: const TextStyle(color: Colors.white, fontSize: 16),
-                    decoration:  InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'add_task'.tr,
                       hintStyle: TextStyle(color: Colors.white54, fontSize: 16),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                     ),
-                    onChanged: widget.onTextChanged, 
+                    onChanged: (value) {
+                      _quickAddController.setTitle(value);
+                      widget.onTextChanged?.call(value);
+                    },
                     onSubmitted: (_) {
                       _handleSubmit();
                       widget.onCancel();
                     },
                   ),
                 ),
-                if (widget.selectedDate != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Chip(
-                      backgroundColor: Colors.white.withOpacity(0.1),
-                      label: Text(
-                        DateFormatter.formatTaskDate(widget.selectedDate),
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
+                Obx(() {
+                  final selectedDate = _quickAddController.selectedDate;
+                  if (selectedDate != null) {
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: Chip(
+                        backgroundColor: Colors.white.withOpacity(0.1),
+                        label: Text(
+                          DateFormatter.formatTaskDate(selectedDate),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
                         ),
+                        deleteIcon: const Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Colors.white70,
+                        ),
+                        onDeleted: () {
+                          _quickAddController.setSelectedDate(null);
+                        },
                       ),
-                      deleteIcon: const Icon(
-                        Icons.close,
-                        size: 16,
-                        color: Colors.white70,
-                      ),
-                      onDeleted: () {
-                        widget.onCancel();
-                      },
-                    ),
-                  ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
               ],
             ),
           ),
@@ -175,35 +190,39 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                       backgroundColor: Colors.transparent,
                       builder:
                           (context) => NoteSheet(
-                            initialNote: _note,
+                            initialNote: _quickAddController.note,
                             onSave: (note) {
-                              setState(() {
-                                _note = note;
-                              });
+                              _quickAddController.setNote(note);
                             },
                           ),
                     );
                   },
                 ),
                 // 如果有备注，显示一个状态标签
-                if (_note != null)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Chip(
-                        backgroundColor: Colors.white.withOpacity(0.1),
-                        label: const Text(
-                          'Note added',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                Obx(() {
+                  final note = _quickAddController.note;
+                  if (note != null) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Chip(
+                          backgroundColor: Colors.white.withOpacity(0.1),
+                          label: Text(
+                            'note_added'.tr,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                          onDeleted: () {
+                            _quickAddController.setNote(null);
+                          },
                         ),
-                        onDeleted: () {
-                          setState(() {
-                            _note = null;
-                          });
-                        },
                       ),
-                    ),
-                  ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
               ],
             ),
           ),

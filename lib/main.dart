@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/date_symbol_data_local.dart';  // 导入日期格式化初始化库
+
 import 'services/storage_service.dart';
 import 'screens/my_day_page.dart';
-import 'package:get/get.dart';
 import 'services/language_service.dart';
-import 'package:intl/date_symbol_data_local.dart';  // 导入日期格式化初始化库
+import 'controllers/quick_add_controller.dart';
+
 
 void main() async {
     // 初始化语言环境数据
   await initializeDateFormatting('en', null);  // 默认语言为英文
   await initializeDateFormatting('zh', null);  // 中文
 
+  Get.put(QuickAddController());
   WidgetsFlutterBinding.ensureInitialized();
   final storageService = await StorageService.init();
   runApp(MyApp(storageService: storageService));

@@ -493,8 +493,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
           ] else
             ListTile(
               leading: const Icon(Icons.edit_note, color: Colors.white70),
-              title: const Text(
-                'Add Note',
+              title: Text(
+                'add_note'.tr,
                 style: TextStyle(color: Colors.white70),
               ),
               onTap: _openNoteEditor,

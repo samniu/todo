@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class NoteSheet extends StatefulWidget {
   final String? initialNote;
@@ -66,8 +67,8 @@ class _NoteSheetState extends State<NoteSheet> {
               controller: _noteController,
               autofocus: true,
               maxLines: null,
-              decoration: const InputDecoration(
-                hintText: 'Add note',
+              decoration:  InputDecoration(
+                hintText: 'add_note'.tr,
                 border: InputBorder.none,
               ),
             ),
