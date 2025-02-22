@@ -280,7 +280,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
   void _clearDueDate() {
     setState(() {
       _dueDate = null;
-      _repeatType = null;  // 同时清除重复设置
+      _repeatType = RepeatType.none;  // 同时清除重复设置
     });
     _saveTodo();
   }
@@ -288,7 +288,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
   // 在清除 Repeat 的地方
   void _clearRepeat() {
     setState(() {
-      _repeatType = null;  // 只清除重复设置
+      _repeatType = RepeatType.none;  // 只清除重复设置
     });
     _saveTodo();
   }
@@ -421,7 +421,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
           ),
           ListTile(
             leading: const Icon(Icons.repeat, color: Colors.white70),
-            title: _repeatType == null
+            title: _repeatType == null || _repeatType == RepeatType.none
                 ? const Text(
                     'Repeat',
                     style: TextStyle(color: Colors.white70),
@@ -430,7 +430,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
                     _getRepeatText(_repeatType!),
                     style: const TextStyle(color: Colors.blue),
                   ),
-            trailing: _repeatType != null
+            trailing: _repeatType != null && _repeatType != RepeatType.none
                 ? IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70),
                     onPressed: _clearRepeat,

@@ -88,7 +88,7 @@ class Todo {
       dueDate: clearDueDate == true ? null : (dueDate ?? this.dueDate), // 允许显式清除
       listId: clearListId == true ? null : (listId ?? this.listId),
       position: position ?? this.position,
-      repeatType: repeatType, // 允许 null 覆盖旧值
+      repeatType: repeatType ?? this.repeatType,
     );
   }
 
