@@ -10,8 +10,6 @@ import 'task_detail_page.dart';
 import 'package:get/get.dart';
 import '../controllers/quick_add_controller.dart';
 
-
-
 class MyDayPage extends StatefulWidget {
   final StorageService storageService;
 
@@ -59,6 +57,7 @@ class _MyDayPageState extends State<MyDayPage> {
 
   Future<void> _saveTodos() async {
     try {
+      print("Todos saved _todos: $_todos"); 
       await widget.storageService.saveTodos(_todos);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,7 +175,7 @@ class _MyDayPageState extends State<MyDayPage> {
   void _hideDatePickerPage(DateTime? date) {
     if (date != null) {
       // _selectedDate = date;
-        _quickAddController.setSelectedDate(date);
+      _quickAddController.setSelectedDate(date);
     }
 
     setState(() {
@@ -209,7 +208,7 @@ class _MyDayPageState extends State<MyDayPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                 Text(
+                Text(
                   'due_date'.tr,
                   style: TextStyle(
                     color: Colors.white,
@@ -238,10 +237,7 @@ class _MyDayPageState extends State<MyDayPage> {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_today, color: Colors.white70),
-            title: Text(
-              'tomorrow'.tr,
-              style: TextStyle(color: Colors.white),
-            ),
+            title: Text('tomorrow'.tr, style: TextStyle(color: Colors.white)),
             trailing: Text(
               DateFormatter.getDayName(tomorrow),
               style: TextStyle(color: Colors.white.withOpacity(0.5)),
@@ -250,10 +246,7 @@ class _MyDayPageState extends State<MyDayPage> {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_month, color: Colors.white70),
-            title:  Text(
-              'nextweek'.tr,
-              style: TextStyle(color: Colors.white),
-            ),
+            title: Text('nextweek'.tr, style: TextStyle(color: Colors.white)),
             trailing: Text(
               DateFormatter.getDayName(nextWeek),
               style: TextStyle(color: Colors.white.withOpacity(0.5)),
@@ -262,10 +255,7 @@ class _MyDayPageState extends State<MyDayPage> {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_view_day, color: Colors.white70),
-            title:  Text(
-              'pickadate'.tr,
-              style: TextStyle(color: Colors.white),
-            ),
+            title: Text('pickadate'.tr, style: TextStyle(color: Colors.white)),
             trailing: const Icon(Icons.chevron_right, color: Colors.white70),
             onTap: () async {
               final now = DateTime.now();
@@ -387,11 +377,12 @@ class _MyDayPageState extends State<MyDayPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => TaskDetailPage(
-                                todo: todo,
-                                onSave: _editTodo,
-                                onDelete: _deleteTodo,
-                              ),
+                              builder:
+                                  (context) => TaskDetailPage(
+                                    todo: todo,
+                                    onSave: _editTodo,
+                                    onDelete: _deleteTodo,
+                                  ),
                             ),
                           );
                         },
@@ -417,7 +408,9 @@ class _MyDayPageState extends State<MyDayPage> {
                                 Obx(() {
                                   final savedTitle = _quickAddController.title;
                                   return Text(
-                                    savedTitle.isNotEmpty ? savedTitle : 'add_task'.tr,
+                                    savedTitle.isNotEmpty
+                                        ? savedTitle
+                                        : 'add_task'.tr,
                                     style: TextStyle(
                                       color: Colors.white70,
                                       fontSize: 16,
@@ -440,13 +433,13 @@ class _MyDayPageState extends State<MyDayPage> {
           if (_showingQuickAdd || _showingDatePicker)
             Positioned.fill(
               child: GestureDetector(
-                onTap: (){
+                onTap: () {
                   if (_showingQuickAdd) {
                     _hideQuickAdd();
                   }
                   if (_showingDatePicker) {
                     _hideDatePickerPage(null);
-                  }                  
+                  }
                 },
                 child: Container(color: Colors.black.withOpacity(0.5)),
               ),
@@ -460,7 +453,7 @@ class _MyDayPageState extends State<MyDayPage> {
               child: GestureDetector(
                 onTap: () {}, // 防止点击事件穿透
                 child: QuickAddTask(
-                  focusNode: _quickAddFocusNode,                  
+                  focusNode: _quickAddFocusNode,
                   onSave: (todo) {
                     _addTodo(todo);
                     _quickAddController.clearAll(); // 保存后清除状态

@@ -10,9 +10,6 @@ class QuickAddTask extends StatefulWidget {
   final VoidCallback onCancel;
   final VoidCallback onDateSelect;
   final FocusNode? focusNode;
-  final DateTime? selectedDate;
-  final String? initialText;
-  final ValueChanged<String>? onTextChanged;
 
   const QuickAddTask({
     super.key,
@@ -20,9 +17,6 @@ class QuickAddTask extends StatefulWidget {
     required this.onCancel,
     required this.onDateSelect,
     this.focusNode,
-    this.selectedDate,
-    this.initialText,
-    this.onTextChanged,
   });
 
   @override
@@ -47,15 +41,6 @@ class _QuickAddTaskState extends State<QuickAddTask> {
     super.dispose();
   }
 
-  @override
-  void didUpdateWidget(QuickAddTask oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 从日期选择返回时，恢复之前保存的标题
-    if (widget.initialText != oldWidget.initialText) {
-      _titleController.text = widget.initialText ?? '';
-    }
-  }
-
   void _handleSubmit() {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
@@ -63,7 +48,7 @@ class _QuickAddTaskState extends State<QuickAddTask> {
     widget.onSave(
       Todo(
         title: title,
-        dueDate: widget.selectedDate,
+        dueDate: _quickAddController.selectedDate,
         description: _quickAddController.note,
       ),
     );
@@ -103,7 +88,6 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                     ),
                     onChanged: (value) {
                       _quickAddController.setTitle(value);
-                      widget.onTextChanged?.call(value);
                     },
                     onSubmitted: (_) {
                       _handleSubmit();
@@ -171,7 +155,7 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                 IconButton(
                   icon: const Icon(Icons.calendar_today),
                   color:
-                      widget.selectedDate != null
+                      _quickAddController.selectedDate != null
                           ? Colors.tealAccent
                           : Colors.white70,
                   iconSize: 22,
