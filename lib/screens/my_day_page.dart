@@ -427,7 +427,14 @@ class _MyDayPageState extends State<MyDayPage> {
           if (_showingQuickAdd || _showingDatePicker)
             Positioned.fill(
               child: GestureDetector(
-                onTap: _hideQuickAdd,
+                onTap: (){
+                  if (_showingQuickAdd) {
+                    _hideQuickAdd();
+                  }
+                  if (_showingDatePicker) {
+                    _hideDatePickerPage(null);
+                  }                  
+                },
                 child: Container(color: Colors.black.withOpacity(0.5)),
               ),
             ),
