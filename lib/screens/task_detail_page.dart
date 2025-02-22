@@ -4,6 +4,7 @@ import '../models/repeat_type.dart';
 import '../utils/date_formatter.dart';
 import '../widgets/note_sheet.dart';
 import '../widgets/repeat_sheet.dart';
+import 'package:get/get.dart';
 
 class TaskDetailPage extends StatefulWidget {
   final Todo todo;
@@ -102,8 +103,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
               ),
               ListTile(
                 leading: const Icon(Icons.today, color: Colors.white70),
-                title: const Text(
-                  'Today',
+                title: Text(
+                  'today'.tr,
                   style: TextStyle(color: Colors.white),
                 ),
                 trailing: Text(
@@ -120,8 +121,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
               ),
               ListTile(
                 leading: const Icon(Icons.calendar_today, color: Colors.white70),
-                title: const Text(
-                  'Tomorrow',
+                title: Text(
+                  'tomorrow'.tr,
                   style: TextStyle(color: Colors.white),
                 ),
                 trailing: Text(
@@ -140,8 +141,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
               ),
               ListTile(
                 leading: const Icon(Icons.calendar_month, color: Colors.white70),
-                title: const Text(
-                  'Next Week',
+                title: Text(
+                  'nextweek'.tr,
                   style: TextStyle(color: Colors.white),
                 ),
                 trailing: Text(
@@ -160,8 +161,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
               ),
               ListTile(
                 leading: const Icon(Icons.calendar_view_day, color: Colors.white70),
-                title: const Text(
-                  'Pick a date',
+                title: Text(
+                  'pickadate'.tr,
                   style: TextStyle(color: Colors.white),
                 ),
                 trailing: const Icon(Icons.chevron_right, color: Colors.white70),
@@ -262,17 +263,17 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
   String _getRepeatText(RepeatType type) {
     switch (type) {
       case RepeatType.daily:
-        return 'Daily';
+        return 'daily'.tr;
       case RepeatType.weekly:
-        return 'Weekly';
+        return 'weekly'.tr;
       case RepeatType.weekdays:
-        return 'Weekdays';
+        return 'weekdays'.tr;
       case RepeatType.monthly:
-        return 'Monthly';
+        return 'monthly'.tr;
       case RepeatType.yearly:
-        return 'Yearly';
+        return 'yearly'.tr;
       default:
-        return 'Repeat';
+        return 'repeat'.tr;
     }
   }
 
@@ -377,8 +378,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
           const Divider(color: Colors.white24),
           ListTile(
             leading: const Icon(Icons.add, color: Colors.white70),
-            title: const Text(
-              'Add Step',
+            title: Text(
+              'add_step'.tr,
               style: TextStyle(color: Colors.white70),
             ),
             onTap: () {
@@ -399,8 +400,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
           ),
           ListTile(
             leading: const Icon(Icons.notifications_none, color: Colors.white70),
-            title: const Text(
-              'Remind Me',
+            title: Text(
+              'remind_me'.tr,
               style: TextStyle(color: Colors.white70),
             ),
             onTap: () {
@@ -410,7 +411,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
           ListTile(
             leading: const Icon(Icons.calendar_today, color: Colors.white70),
             title: Text(
-              _dueDate == null ? 'Add Due Date' : DateFormatter.formatTaskDate(_dueDate),
+              _dueDate == null ? 'due_date'.tr : DateFormatter.formatTaskDate(_dueDate),
               style: const TextStyle(color: Colors.white70),
             ),
             trailing: _dueDate != null ? IconButton(
@@ -422,8 +423,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
           ListTile(
             leading: const Icon(Icons.repeat, color: Colors.white70),
             title: _repeatType == null || _repeatType == RepeatType.none
-                ? const Text(
-                    'Repeat',
+                ? Text(
+                    'repeat'.tr,
                     style: TextStyle(color: Colors.white70),
                   )
                 : Text(
@@ -450,8 +451,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
           ),
           ListTile(
             leading: const Icon(Icons.attach_file, color: Colors.white70),
-            title: const Text(
-              'Add File',
+            title: Text(
+              'add_file'.tr,
               style: TextStyle(color: Colors.white70),
             ),
             onTap: () {

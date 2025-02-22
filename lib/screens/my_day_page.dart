@@ -7,6 +7,8 @@ import '../widgets/quick_add_task.dart';
 import '../widgets/task_sheet.dart';
 import '../utils/date_formatter.dart';
 import 'task_detail_page.dart';
+import 'package:get/get.dart';
+
 
 class MyDayPage extends StatefulWidget {
   final StorageService storageService;
@@ -202,8 +204,8 @@ class _MyDayPageState extends State<MyDayPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Due',
+                 Text(
+                  'due_date'.tr,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -211,8 +213,8 @@ class _MyDayPageState extends State<MyDayPage> {
                   ),
                 ),
                 TextButton(
-                  child: const Text(
-                    'Done',
+                  child: Text(
+                    'done'.tr,
                     style: TextStyle(color: Colors.blue, fontSize: 16),
                   ),
                   onPressed: () => _hideDatePickerPage(null),
@@ -222,7 +224,7 @@ class _MyDayPageState extends State<MyDayPage> {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_today, color: Colors.white70),
-            title: const Text('Today', style: TextStyle(color: Colors.white)),
+            title: Text('today'.tr, style: TextStyle(color: Colors.white)),
             trailing: Text(
               DateFormatter.getDayName(now),
               style: TextStyle(color: Colors.white.withOpacity(0.5)),
@@ -231,8 +233,8 @@ class _MyDayPageState extends State<MyDayPage> {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_today, color: Colors.white70),
-            title: const Text(
-              'Tomorrow',
+            title: Text(
+              'tomorrow'.tr,
               style: TextStyle(color: Colors.white),
             ),
             trailing: Text(
@@ -243,8 +245,8 @@ class _MyDayPageState extends State<MyDayPage> {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_month, color: Colors.white70),
-            title: const Text(
-              'Next Week',
+            title:  Text(
+              'nextweek'.tr,
               style: TextStyle(color: Colors.white),
             ),
             trailing: Text(
@@ -255,8 +257,8 @@ class _MyDayPageState extends State<MyDayPage> {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_view_day, color: Colors.white70),
-            title: const Text(
-              'Pick a date',
+            title:  Text(
+              'pickadate'.tr,
               style: TextStyle(color: Colors.white),
             ),
             trailing: const Icon(Icons.chevron_right, color: Colors.white70),
@@ -406,8 +408,8 @@ class _MyDayPageState extends State<MyDayPage> {
                                   size: 24,
                                 ),
                                 const SizedBox(width: 16),
-                                const Text(
-                                  'Add a Task',
+                                Text(
+                                  'add_task'.tr,
                                   style: TextStyle(
                                     color: Colors.white70,
                                     fontSize: 16,

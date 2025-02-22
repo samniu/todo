@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/todo.dart';
 import '../utils/date_formatter.dart';
 import 'note_sheet.dart';
+import 'package:get/get.dart';
 
 class QuickAddTask extends StatefulWidget {
   final Function(Todo) onSave;
@@ -87,8 +88,8 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                     controller: _titleController,
                     focusNode: widget.focusNode,
                     style: const TextStyle(color: Colors.white, fontSize: 16),
-                    decoration: const InputDecoration(
-                      hintText: 'Add a Task',
+                    decoration:  InputDecoration(
+                      hintText: 'add_task'.tr,
                       hintStyle: TextStyle(color: Colors.white54, fontSize: 16),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
