@@ -410,13 +410,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
             ),
             trailing: _dueDate != null ? IconButton(
               icon: const Icon(Icons.close, color: Colors.white70),
-              onPressed: () {
-                setState(() {
-                  _dueDate = null;
-                  _repeatType = null;  // 清除 Due Date 时同时清除 Repeat
-                });
-                _saveTodo();
-              },
+              onPressed: _clearDueDate,
             ) : null,
             onTap: _showDatePicker,
           ),
@@ -434,12 +428,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
             trailing: _repeatType != null
                 ? IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70),
-                    onPressed: () {
-                      setState(() {
-                        _repeatType = null;
-                      });
-                      _saveTodo();
-                    },
+                    onPressed: _clearRepeat,
                   )
                 : null,
             onTap: () {
