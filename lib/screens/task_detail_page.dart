@@ -47,7 +47,8 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
   }
 
   void _saveTodo() {
-    //print("Todos saved _dueDate: $_dueDate"); 
+    print("Todos saved _repeatType: $_repeatType"); 
+    print("Todos saved _dueDate: $_dueDate"); 
     final updatedTodo = widget.todo.copyWith(
       title: _titleController.text,
       isCompleted: _isCompleted,
@@ -58,7 +59,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
       clearDueDate: _dueDate == null,   // 如果用户想要清空 dueDate
       clearDescription: _note == null,  // 如果用户想要清空 description
     );
-    //print("Todos saved: $updatedTodo"); // 调试输出
+    print("Todos saved: $updatedTodo"); // 调试输出
     widget.onSave(updatedTodo);
   }
 
