@@ -22,7 +22,7 @@ class TodoList extends StatefulWidget {
 }
 
 class _TodoListState extends State<TodoList> {
-  bool _isCompletedExpanded = true;
+  bool _isCompletedExpanded = false;
 
   @override
   Widget build(BuildContext context) {
