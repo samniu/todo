@@ -24,6 +24,7 @@ class _MyDayPageState extends State<MyDayPage> {
   bool _showingQuickAdd = false;
   bool _showingDatePicker = false;
   DateTime? _selectedDate;
+  String? _quickAddText;
 
   @override
   void initState() {
@@ -441,8 +442,13 @@ class _MyDayPageState extends State<MyDayPage> {
                 child: QuickAddTask(
                   focusNode: _quickAddFocusNode,
                   selectedDate: _selectedDate,
+                  initialText: _quickAddText, 
+                  onTextChanged: (text) {
+                    _quickAddText = text;  // 保存输入的文本
+                  },                  
                   onSave: (todo) {
                     _addTodo(todo);
+                    _quickAddText = null;
                     _hideQuickAdd();
                   },
                   onCancel: _hideQuickAdd,

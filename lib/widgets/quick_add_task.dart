@@ -9,6 +9,8 @@ class QuickAddTask extends StatefulWidget {
   final VoidCallback onDateSelect;
   final FocusNode? focusNode;
   final DateTime? selectedDate;
+  final String? initialText;
+  final ValueChanged<String>? onTextChanged;
 
   const QuickAddTask({
     super.key,
@@ -17,6 +19,8 @@ class QuickAddTask extends StatefulWidget {
     required this.onDateSelect,
     this.focusNode,
     this.selectedDate,
+    this.initialText, 
+    this.onTextChanged,
   });
 
   @override
@@ -24,8 +28,14 @@ class QuickAddTask extends StatefulWidget {
 }
 
 class _QuickAddTaskState extends State<QuickAddTask> {
-  final _titleController = TextEditingController();
+  late TextEditingController _titleController;
   String? _note;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.initialText);
+  }
 
   @override
   void dispose() {
@@ -33,11 +43,24 @@ class _QuickAddTaskState extends State<QuickAddTask> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(QuickAddTask oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 从日期选择返回时，恢复之前保存的标题
+    if (widget.initialText != oldWidget.initialText) {
+      _titleController.text = widget.initialText ?? '';
+    }
+  }
+
   void _handleSubmit() {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
 
-    widget.onSave(Todo(title: title, dueDate: widget.selectedDate));
+    widget.onSave(Todo(
+      title: title,
+      dueDate: widget.selectedDate,
+      description: _note,
+    ));  
 
     _titleController.clear();
   }
@@ -70,6 +93,7 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                     ),
+                    onChanged: widget.onTextChanged, 
                     onSubmitted: (_) {
                       _handleSubmit();
                       widget.onCancel();
