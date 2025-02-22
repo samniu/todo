@@ -1,81 +1,58 @@
-# Flutter Todo App Development Plan
+# Flutter Todo App
 
-## Phase 1: Basic Setup and UI (Week 1-2)
-### Day 1-3: Project Setup
-- Create Flutter project structure
-- Set up basic navigation
-- Implement theme configuration
-- Add basic app bar and navigation elements
+A simple yet powerful task management app built with Flutter. Currently in active development, with more features coming soon!
 
-### Day 4-7: Task List UI
-- Create basic task item widget
-- Implement task list view
-- Add floating action button for new tasks
-- Design basic task card layout
+**[中文版 / Chinese Version](README_ZH.md)**
 
-### Day 8-14: Core Task Features
-- Implement task creation
-- Add task completion toggle
-- Enable basic task editing
-- Add task deletion functionality
+---
 
-## Phase 2: Enhanced Features (Week 3-4)
-### Data Management
-- Set up local storage using SQLite/Hive
-- Implement basic CRUD operations
-- Add data persistence
-- Create data models and repositories
+## Features (Completed)
 
-### UI Enhancements
-- Add custom backgrounds support
-- Implement task grouping
-- Add completion animations
-- Improve task item design
-- Implement dark/light theme
+### 1. **Task List**
+- View all tasks in one place.  
+- Mark tasks as complete with a single tap.  
+- Floating action button for quick task creation.  
 
-## Phase 3: Advanced Features (Week 5-6)
-### Task Organization
-- Add lists/categories
-- Implement due dates
-- Add task priorities
-- Create task sorting options
+### 2. **Task Creation & Editing**
+- Add tasks with title, description, due date, and priority.  
+- Edit tasks anytime.  
 
-### User Experience
-- Add swipe actions
-- Implement drag-and-drop reordering
-- Add task completion animations
-- Implement search functionality
+---
 
-## Phase 4: Polish and Extra Features (Week 7-8)
-### Additional Features
-- Add reminders/notifications
-- Implement recurring tasks
-- Add task notes/descriptions
-- Create widgets for home screen
+## Upcoming Features (Planned)
 
-### Final Polish
-- Optimize performance
-- Add error handling
-- Implement proper state management
-- Add loading states and animations
-- Polish UI transitions
+- **Task Categories & Grouping**: Organize tasks into custom categories.  
+- **Reminders & Notifications**: Set reminders for important tasks.  
+- **Data Sync & Backup**: Export and sync tasks across devices.  
+- **Themes & Customization**: Switch between light and dark themes.  
+- **Search Functionality**: Quickly find tasks by keyword.  
 
-## Technical Considerations
-### Key Packages to Consider
-- `flutter_riverpod` or `provider` for state management
-- `sqflite` or `hive` for local storage
-- `flutter_local_notifications` for notifications
-- `shared_preferences` for app settings
-- `intl` for date formatting
-- `flutter_slidable` for swipe actions
+---
 
-### Architecture
-- Implement Clean Architecture principles
-- Use Repository pattern for data management
-- Follow SOLID principles
-- Implement proper separation of concerns
+## Technical Stack
 
-### Testing Strategy
-- Unit tests for business logic
-- Widget tests for UI components
-- Integration tests for critical flows
+- **Framework**: Flutter (cross-platform support for iOS and Android).  
+- **State Management**: `Provider` for efficient state management.  
+- **Local Storage**: `shared_preferences` for storing task data locally.  
+
+---
+
+## How to Get Started
+
+1. Clone the repository:  
+   ```bash
+   git clone https://github.com/samniu/todo.git
+
+2. Install dependencies:
+    ```bash
+    flutter pub get
+
+3. Run the app:
+    ```bash
+    flutter run
+
+## Contribution & Feedback
+We welcome contributions! If you have any suggestions or issues, please open an [Issue](https://github.com/samniu/todo/issues) or submit a Pull Request.    
+
+## License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
