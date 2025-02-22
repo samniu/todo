@@ -9,13 +9,13 @@ A simple yet powerful task management app built with Flutter. Currently in activ
 ## Features (Completed)
 
 ### 1. **Task List**
-![Task List](screenshots/task_list.png)
+<img src="screenshots/task_list.png" alt="Task List" width="500" /> 
 - View all tasks in one place.  
 - Mark tasks as complete with a single tap.  
 - Floating action button for quick task creation.  
 
 ### 2. **Task Creation & Editing**
-![Task Creation](screenshots/edit_task.png)
+<img src="screenshots/edit_task.png" alt="Task Edit" width="500" /> 
 - Add tasks with title, description, due date, and priority.  
 - Edit tasks anytime.  
 
