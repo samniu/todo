@@ -25,7 +25,8 @@ class Messages extends Translations {
       'step_removed': 'Step removed',
       
       // Date related
-      'due_date': 'Add Due Date',
+      'add_due_date': 'Add Due Date',
+      'due_date': 'Due',
       'repeat': 'Repeat',
       'daily': 'Daily',
       'weekly': 'Weekly',
@@ -70,7 +71,8 @@ class Messages extends Translations {
       'step_removed': '步骤已删除',
       
       // Date related
-      'due_date': '截止日期',
+      'add_due_date': '截止日期',
+      'due_date': '截止',
       'repeat': '重复',
       'daily': '每天',
       'weekly': '每周',

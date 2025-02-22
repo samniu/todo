@@ -411,7 +411,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
           ListTile(
             leading: const Icon(Icons.calendar_today, color: Colors.white70),
             title: Text(
-              _dueDate == null ? 'due_date'.tr : DateFormatter.formatTaskDate(_dueDate),
+              _dueDate == null ? 'add_due_date'.tr : DateFormatter.formatTaskDate(_dueDate),
               style: const TextStyle(color: Colors.white70),
             ),
             trailing: _dueDate != null ? IconButton(
