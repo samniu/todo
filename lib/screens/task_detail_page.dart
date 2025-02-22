@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/todo.dart';
+import '../models/repeat_type.dart';
 import '../utils/date_formatter.dart';
 import '../widgets/note_sheet.dart';
+import '../widgets/repeat_sheet.dart';
 
 class TaskDetailPage extends StatefulWidget {
   final Todo todo;
@@ -25,6 +27,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
   late bool _isFavorite;
   late DateTime? _dueDate;
   late String? _note;
+  RepeatType? _repeatType;
 
   @override
   void initState() {
@@ -34,6 +37,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
     _isFavorite = widget.todo.isFavorite;
     _dueDate = widget.todo.dueDate;
     _note = widget.todo.description;
+    _repeatType = widget.todo.repeatType;
   }
 
   @override
@@ -49,6 +53,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
       isFavorite: _isFavorite,
       dueDate: _dueDate,
       description: _note,
+      repeatType: _repeatType,
     );
     widget.onSave(updatedTodo);
   }
@@ -211,6 +216,78 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
     );
   }
 
+  void _updateRepeatTypeAndDueDate(RepeatType? type) {
+    setState(() {
+      _repeatType = type;
+      // 如果没有设置 due date，则根据重复类型自动设置
+      if (_dueDate == null && type != null) {
+        final now = DateTime.now();
+        switch (type) {
+          case RepeatType.daily:
+            _dueDate = DateTime(now.year, now.month, now.day);
+            break;
+          case RepeatType.weekly:
+            // 设置为本周对应的日期
+            _dueDate = DateTime(now.year, now.month, now.day);
+            break;
+          case RepeatType.weekdays:
+            // 如果是周末，设置为下周一
+            if (now.weekday == DateTime.saturday) {
+              _dueDate = now.add(const Duration(days: 2));
+            } else if (now.weekday == DateTime.sunday) {
+              _dueDate = now.add(const Duration(days: 1));
+            } else {
+              _dueDate = DateTime(now.year, now.month, now.day);
+            }
+            break;
+          case RepeatType.monthly:
+            _dueDate = DateTime(now.year, now.month, now.day);
+            break;
+          case RepeatType.yearly:
+            _dueDate = DateTime(now.year, now.month, now.day);
+            break;
+          default:
+            break;
+        }
+      }
+    });
+    _saveTodo();  // 保存更改
+  }
+  // 添加一个辅助方法来获取重复类型的显示文本
+  String _getRepeatText(RepeatType type) {
+    switch (type) {
+      case RepeatType.daily:
+        return 'Daily';
+      case RepeatType.weekly:
+        return 'Weekly';
+      case RepeatType.weekdays:
+        return 'Weekdays';
+      case RepeatType.monthly:
+        return 'Monthly';
+      case RepeatType.yearly:
+        return 'Yearly';
+      default:
+        return 'Repeat';
+    }
+  }
+
+    // 在清除 Due date 的地方
+  void _clearDueDate() {
+    setState(() {
+      _dueDate = null;
+      _repeatType = null;  // 同时清除重复设置
+    });
+    _saveTodo();
+  }
+
+  // 在清除 Repeat 的地方
+  void _clearRepeat() {
+    setState(() {
+      _repeatType = null;  // 只清除重复设置
+    });
+    _saveTodo();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -336,6 +413,7 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
               onPressed: () {
                 setState(() {
                   _dueDate = null;
+                  _repeatType = null;  // 清除 Due Date 时同时清除 Repeat
                 });
                 _saveTodo();
               },
@@ -344,12 +422,36 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
           ),
           ListTile(
             leading: const Icon(Icons.repeat, color: Colors.white70),
-            title: const Text(
-              'Repeat',
-              style: TextStyle(color: Colors.white70),
-            ),
+            title: _repeatType == null
+                ? const Text(
+                    'Repeat',
+                    style: TextStyle(color: Colors.white70),
+                  )
+                : Text(
+                    _getRepeatText(_repeatType!),
+                    style: const TextStyle(color: Colors.blue),
+                  ),
+            trailing: _repeatType != null
+                ? IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                    onPressed: () {
+                      setState(() {
+                        _repeatType = null;
+                      });
+                      _saveTodo();
+                    },
+                  )
+                : null,
             onTap: () {
-              // TODO: Implement repeat
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => RepeatSheet(
+                  initialRepeatType: _repeatType,
+                  onSave: _updateRepeatTypeAndDueDate,
+                ),
+              );
             },
           ),
           ListTile(
