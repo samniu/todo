@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/todo.dart';
 import 'todo_item.dart';
+import 'package:get/get.dart';
+
 
 class TodoList extends StatelessWidget {
   final List<Todo> todos;
@@ -31,10 +33,10 @@ class TodoList extends StatelessWidget {
               onTap: onTaskTap,  // 更新参数名
             )),
         if (completedTodos.isNotEmpty) ...[
-          const Padding(
+           Padding(
             padding: EdgeInsets.symmetric(vertical: 16.0),
             child: Text(
-              '已完成',
+              'completed'.tr,
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 16,

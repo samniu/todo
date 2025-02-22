@@ -44,6 +44,7 @@ class Messages extends Translations {
       'delete': 'Delete',
       'edit': 'Edit',
       'done': 'Done',
+      'completed': 'Completed',
 
       'add_file':'Add File',
     },
@@ -88,6 +89,7 @@ class Messages extends Translations {
       'delete': '删除',
       'edit': '编辑',
       'done': '完成',
+      'completed': '已完成',
 
       'add_file':'添加文件',
     },
