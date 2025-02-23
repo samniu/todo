@@ -170,7 +170,7 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                   onPressed: () {
                     showModalBottomSheet(
                       context: context,
-                      isScrollControlled: true,
+                      isScrollControlled: false,
                       backgroundColor: Colors.transparent,
                       builder:
                           (context) => NoteSheet(
