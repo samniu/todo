@@ -48,7 +48,7 @@ class _QuickAddTaskState extends State<QuickAddTask> {
     widget.onSave(
       Todo(
         title: title,
-        dueDate: _quickAddController.selectedDate,
+        due_date: _quickAddController.selectedDate,
         description: _quickAddController.note,
       ),
     );

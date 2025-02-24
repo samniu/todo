@@ -1,12 +1,14 @@
 import 'package:get/get.dart';
+import 'dart:convert';
 import 'package:get_storage/get_storage.dart';
 import '../services/websocket_service.dart';
+import 'package:http/http.dart' as http;
 
 class AuthController extends GetxController {
   final storage = GetStorage();
   final _isLoggedIn = false.obs;
-  final _token = RxString('');
-  
+  final _token = ''.obs;
+
   bool get isLoggedIn => _isLoggedIn.value;
   String get token => _token.value;
 
@@ -14,124 +16,126 @@ class AuthController extends GetxController {
   void onInit() {
     super.onInit();
     print('AuthController: Initializing...');
-    _token.value = storage.read('token') ?? '';
-    _isLoggedIn.value = _token.value.isNotEmpty;
-    print('AuthController: Token loaded, isLoggedIn: ${_isLoggedIn.value}');
+    _initToken();
   }
 
-  // 提供一个公共方法来连接 WebSocket
-  void connectWebSocket() {
-    if (isLoggedIn) {
-      print('Connecting WebSocket...');
-      try {
-        // 使用异步方式连接 WebSocket
-        Future(() async {
-          final wsService = Get.find<WebSocketService>();
-          await wsService.connect(_token.value);
-        });
-      } catch (e) {
-        print('Error connecting WebSocket: $e');
-      }
+  void _initToken() {
+    final savedToken = storage.read('token');
+    if (savedToken != null) {
+      _token.value = savedToken;
+      _isLoggedIn.value = true;
+      print('AuthController: Token loaded, isLoggedIn: $isLoggedIn');
     }
   }
 
+ Future<void> login(String username, String password) async {
+  print('AuthController: Attempting login...');
+  try {
+    print('AuthController: Login $username, $password');
+
+    final response = await http.post(
+      Uri.parse('http://localhost:8080/api/login'),  // Android 模拟器改为10.0.2.2
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        "email": username,
+        'password': password,
+      }),
+    );      
+
+    // ❌ `hasError` 和 `statusText` 不适用于 `http`
+    if (response.statusCode != 200) {
+      throw 'Login failed: ${response.statusCode}, ${response.body}';
+    }
+
+    // ✅ 解析 JSON
+    final responseData = jsonDecode(response.body);
+    final token = responseData['token'] as String?;
+
+    if (token == null) {
+      throw 'Token not found in response';
+    }
+
+    await setToken(token);  // 假设 `setToken()` 是你存储 token 的方法
+    
+    Get.offAllNamed('/');
+    print('AuthController: Login successful');
+  } catch (e) {
+    print('AuthController: Login failed: $e');
+    Get.snackbar(
+      'Login Failed',
+      'Please check your credentials and try again',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+    rethrow;
+  }
+}
+
   Future<void> setToken(String newToken) async {
-    print('Setting new token...');
+    print('AuthController: Setting new token...');
     _token.value = newToken;
     _isLoggedIn.value = true;
     await storage.write('token', newToken);
-    connectWebSocket();
-    print('Token set and WebSocket connected');
+    print('AuthController: Token set successfully');
+    
+    // 设置 token 后立即连接 WebSocket
+    await connectWebSocket();
   }
 
-  Future<void> login(String email, String password) async {
-    try {
-      print('Attempting login...');
-      final response = await GetConnect().post(
-        'http://localhost:8080/api/login',
-        {
-          'email': email,
-          'password': password,
-        },
-      );
-
-      print('Login response: ${response.body}');
-
-      if (response.statusCode == 200 && response.body['token'] != null) {
-        await setToken(response.body['token']);
-        Get.offAllNamed('/my-day');
-        print('Login successful');
-      } else {
-        print('Login failed: ${response.statusCode}');
-        throw 'Login failed';
-      }
-    } catch (e) {
-      print('Login error: $e');
-      rethrow;
-    }
+  Future<void> clearToken() async {
+    print('AuthController: Clearing token...');
+    _token.value = '';
+    _isLoggedIn.value = false;
+    await storage.remove('token');
+    print('AuthController: Token cleared');
+    
+    // 断开 WebSocket 连接
+    final wsService = Get.find<WebSocketService>();
+    await wsService.disconnect();
   }
 
-  Future<void> register(String email, String password, String name) async {
-    try {
-      print('Attempting registration...');
-      final response = await GetConnect().post(
-        'http://localhost:8080/api/register',
-        {
-          'email': email,
-          'password': password,
-          'name': name,
-        },
-      );
-
-      print('Registration response: ${response.body}');
-
-      if (response.statusCode == 200 && response.body['token'] != null) {
-        await setToken(response.body['token']);
-        Get.offAllNamed('/my-day');
-        print('Registration successful');
-      } else {
-        print('Registration failed: ${response.statusCode}');
-        throw 'Registration failed';
+  Future<void> connectWebSocket() async {
+    if (isLoggedIn) {
+      print('AuthController: Connecting WebSocket...');
+      try {
+        print('AuthController: Using token: ${_token.value}');
+        final wsService = Get.find<WebSocketService>();
+        await wsService.connect(_token.value);
+      } catch (e, stackTrace) {
+        print('AuthController: Error connecting WebSocket: $e');
+        print('AuthController: Stack trace: $stackTrace');
       }
-    } catch (e) {
-      print('Registration error: $e');
-      rethrow;
+    } else {
+      print('AuthController: Not connecting WebSocket - user not logged in');
     }
   }
 
   Future<void> logout() async {
-    print('Logging out...');
-    _token.value = '';
-    _isLoggedIn.value = false;
-    await storage.remove('token');
-    Get.find<WebSocketService>().disconnect();
-    Get.offAllNamed('/login');
-    print('Logout complete');
-  }
-
-  Future<void> checkAuthStatus() async {
-    if (_token.value.isNotEmpty) {
-      try {
-        final response = await GetConnect().get(
-          'http://localhost:8080/api/check-auth',
+    print('AuthController: Logging out...');
+    try {
+      if (isLoggedIn) {
+        // 调用登出接口
+        final response = await GetConnect().post(
+          'http://localhost:8080/api/logout',
+          null,
           headers: {
             'Authorization': 'Bearer ${_token.value}',
           },
         );
-
-        if (response.statusCode != 200) {
-          await logout();
+        
+        if (response.hasError) {
+          print('AuthController: Logout API call failed: ${response.statusText}');
         }
-      } catch (e) {
-        print('Auth check error: $e');
-        await logout();
       }
+    } catch (e) {
+      print('AuthController: Error during logout: $e');
+    } finally {
+      // 无论服务器响应如何，都清除本地状态
+      await clearToken();
+      Get.offAllNamed('/login');
+      print('AuthController: Logged out and navigated to login');
     }
-  }
-
-  @override
-  void onClose() {
-    Get.find<WebSocketService>().disconnect();
-    super.onClose();
   }
 }

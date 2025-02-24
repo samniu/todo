@@ -29,16 +29,31 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
   late DateTime? _dueDate;
   late String? _note;
   RepeatType? _repeatType;
+  bool _hasChanges = false; // 添加标记，跟踪是否有修改
 
   @override
   void initState() {
     super.initState();
+    _initializeData();
+  }
+
+  void _initializeData() {
     _titleController = TextEditingController(text: widget.todo.title);
-    _isCompleted = widget.todo.isCompleted;
-    _isFavorite = widget.todo.isFavorite;
-    _dueDate = widget.todo.dueDate;
+    _isCompleted = widget.todo.is_completed;
+    _isFavorite = widget.todo.is_favorite;
+    _dueDate = widget.todo.due_date;
     _note = widget.todo.description;
-    _repeatType = widget.todo.repeatType;
+    _repeatType = widget.todo.repeat_type;
+    _hasChanges = false;
+  }
+
+  bool _checkIfChanged() {
+    return _titleController.text != widget.todo.title ||
+        _isCompleted != widget.todo.is_completed ||
+        _isFavorite != widget.todo.is_favorite ||
+        _dueDate != widget.todo.due_date ||
+        _note != widget.todo.description ||
+        _repeatType != widget.todo.repeat_type;
   }
 
   @override
@@ -48,22 +63,28 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
   }
 
   void _saveTodo() {
+    if (!_checkIfChanged()) {
+      print("No changes detected, skipping save");
+      return;
+    }
+
     print("Todos saved _repeatType: $_repeatType"); 
     print("Todos saved _dueDate: $_dueDate"); 
     final updatedTodo = widget.todo.copyWith(
       title: _titleController.text,
-      isCompleted: _isCompleted,
-      isFavorite: _isFavorite,
-      dueDate: _dueDate,// 如果 _dueDate 为 null，则取决于 clearDueDate
+      is_completed: _isCompleted,
+      is_favorite: _isFavorite,
+      due_date: _dueDate,// 如果 _dueDate 为 null，则取决于 clearDueDate
       description: _note,
-      repeatType: _repeatType,
-      clearDueDate: _dueDate == null,   // 如果用户想要清空 dueDate
-      clearDescription: _note == null,  // 如果用户想要清空 description
+      repeat_type: _repeatType,
+      clear_due_date: _dueDate == null,   // 如果用户想要清空 dueDate
+      clear_description: _note == null,  // 如果用户想要清空 description
     );
     print("Todos saved: $updatedTodo"); // 调试输出
     widget.onSave(updatedTodo);
+    _hasChanges = false;
   }
-
+    
   void _showDatePicker() {
     showModalBottomSheet(
       context: context,
@@ -222,43 +243,6 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
     );
   }
 
-  void _updateRepeatTypeAndDueDate(RepeatType? type) {
-    setState(() {
-      _repeatType = type;
-      // 如果没有设置 due date，则根据重复类型自动设置
-      if (_dueDate == null && type != null) {
-        final now = DateTime.now();
-        switch (type) {
-          case RepeatType.daily:
-            _dueDate = DateTime(now.year, now.month, now.day);
-            break;
-          case RepeatType.weekly:
-            // 设置为本周对应的日期
-            _dueDate = DateTime(now.year, now.month, now.day);
-            break;
-          case RepeatType.weekdays:
-            // 如果是周末，设置为下周一
-            if (now.weekday == DateTime.saturday) {
-              _dueDate = now.add(const Duration(days: 2));
-            } else if (now.weekday == DateTime.sunday) {
-              _dueDate = now.add(const Duration(days: 1));
-            } else {
-              _dueDate = DateTime(now.year, now.month, now.day);
-            }
-            break;
-          case RepeatType.monthly:
-            _dueDate = DateTime(now.year, now.month, now.day);
-            break;
-          case RepeatType.yearly:
-            _dueDate = DateTime(now.year, now.month, now.day);
-            break;
-          default:
-            break;
-        }
-      }
-    });
-    _saveTodo();  // 保存更改
-  }
   // 添加一个辅助方法来获取重复类型的显示文本
   String _getRepeatText(RepeatType type) {
     switch (type) {
@@ -277,248 +261,309 @@ class _TaskDetailPageState extends State<TaskDetailPage> {
     }
   }
 
-    // 在清除 Due date 的地方
-  void _clearDueDate() {
+  // 修改所有更新状态的地方，添加 _hasChanges = true
+  void _updateState(VoidCallback updateFn) {
     setState(() {
-      _dueDate = null;
-      _repeatType = RepeatType.none;  // 同时清除重复设置
+      updateFn();
+      _hasChanges = true;
+    });
+  }
+
+  // 例如，修改 favorite 状态的方法
+  void _toggleFavorite() {
+    _updateState(() {
+      _isFavorite = !_isFavorite;
     });
     _saveTodo();
   }
 
-  // 在清除 Repeat 的地方
+  // 修改完成状态的方法
+  void _toggleComplete() {
+    _updateState(() {
+      _isCompleted = !_isCompleted;
+    });
+    _saveTodo();
+  }
+
+  // 清除截止日期
+  void _clearDueDate() {
+    _updateState(() {
+      _dueDate = null;
+      _repeatType = RepeatType.none;
+    });
+    _saveTodo();
+  }
+
+  // 清除重复设置
   void _clearRepeat() {
-    setState(() {
-      _repeatType = RepeatType.none;  // 只清除重复设置
+    _updateState(() {
+      _repeatType = RepeatType.none;
+    });
+    _saveTodo();
+  }
+
+  // 修改重复类型和截止日期
+  void _updateRepeatTypeAndDueDate(RepeatType? type) {
+    _updateState(() {
+      _repeatType = type;
+      if (_dueDate == null && type != null) {
+        final now = DateTime.now();
+        switch (type) {
+          case RepeatType.daily:
+            _dueDate = DateTime(now.year, now.month, now.day);
+            break;
+          case RepeatType.weekly:
+            _dueDate = DateTime(now.year, now.month, now.day);
+            break;
+          case RepeatType.weekdays:
+            if (now.weekday == DateTime.saturday) {
+              _dueDate = now.add(const Duration(days: 2));
+            } else if (now.weekday == DateTime.sunday) {
+              _dueDate = now.add(const Duration(days: 1));
+            } else {
+              _dueDate = DateTime(now.year, now.month, now.day);
+            }
+            break;
+          case RepeatType.monthly:
+          case RepeatType.yearly:
+            _dueDate = DateTime(now.year, now.month, now.day);
+            break;
+          default:
+            break;
+        }
+      }
     });
     _saveTodo();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            _saveTodo();
-            Navigator.pop(context);
-          },
-        ),
-        title: const Text('My Day'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _isFavorite ? Icons.star : Icons.star_border,
-              color: _isFavorite ? Colors.amber : Colors.white70,
-            ),
+    return WillPopScope(
+      onWillPop: () async {
+        if (_hasChanges) {
+          _saveTodo();
+        }
+        return true;
+      },      
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              setState(() {
-                _isFavorite = !_isFavorite;
-              });
-              _saveTodo();
+             if (_hasChanges) {
+                _saveTodo();
+              }
+              Navigator.pop(context);
             },
           ),
-        ],
-      ),
-      body: ListView(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isCompleted = !_isCompleted;
-                    });
-                    _saveTodo();
-                  },
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _isCompleted ? Colors.transparent : Colors.white70,
-                        width: 2,
-                      ),
-                      color: _isCompleted ? Colors.white70 : Colors.transparent,
-                    ),
-                    child: _isCompleted
-                        ? const Icon(
-                            Icons.check,
-                            size: 16,
-                            color: Colors.black87,
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextField(
-                    controller: _titleController,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      decoration: _isCompleted ? TextDecoration.lineThrough : null,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                    ),
-                    onChanged: (_) => _saveTodo(),
-                  ),
-                ),
-              ],
+          title: const Text('My Day'),
+          actions: [
+            IconButton(
+              icon: Icon(
+                _isFavorite ? Icons.star : Icons.star_border,
+                color: _isFavorite ? Colors.amber : Colors.white70,
+              ),
+              onPressed: _toggleFavorite,
             ),
-          ),
-          const Divider(color: Colors.white24),
-          ListTile(
-            leading: const Icon(Icons.add, color: Colors.white70),
-            title: Text(
-              'add_step'.tr,
-              style: TextStyle(color: Colors.white70),
-            ),
-            onTap: () {
-              // TODO: Implement add step
-            },
-          ),
-          const Divider(color: Colors.white24),
-          ListTile(
-            leading: const Icon(Icons.wb_sunny_outlined, color: Colors.white70),
-            title: const Text(
-              'Added to My Day',
-              style: TextStyle(color: Colors.white70),
-            ),
-            trailing: const Icon(Icons.close, color: Colors.white70),
-            onTap: () {
-              // TODO: Implement remove from My Day
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications_none, color: Colors.white70),
-            title: Text(
-              'remind_me'.tr,
-              style: TextStyle(color: Colors.white70),
-            ),
-            onTap: () {
-              // TODO: Implement reminder
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.calendar_today, color: Colors.white70),
-            title: Text(
-              _dueDate == null ? 'add_due_date'.tr : DateFormatter.formatTaskDate(_dueDate),
-              style: const TextStyle(color: Colors.white70),
-            ),
-            trailing: _dueDate != null ? IconButton(
-              icon: const Icon(Icons.close, color: Colors.white70),
-              onPressed: _clearDueDate,
-            ) : null,
-            onTap: _showDatePicker,
-          ),
-          ListTile(
-            leading: const Icon(Icons.repeat, color: Colors.white70),
-            title: _repeatType == null || _repeatType == RepeatType.none
-                ? Text(
-                    'repeat'.tr,
-                    style: TextStyle(color: Colors.white70),
-                  )
-                : Text(
-                    _getRepeatText(_repeatType!),
-                    style: const TextStyle(color: Colors.blue),
-                  ),
-            trailing: _repeatType != null && _repeatType != RepeatType.none
-                ? IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70),
-                    onPressed: _clearRepeat,
-                  )
-                : null,
-            onTap: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => RepeatSheet(
-                  initialRepeatType: _repeatType,
-                  onSave: _updateRepeatTypeAndDueDate,
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.attach_file, color: Colors.white70),
-            title: Text(
-              'add_file'.tr,
-              style: TextStyle(color: Colors.white70),
-            ),
-            onTap: () {
-              // TODO: Implement add file
-            },
-          ),
-          const Divider(color: Colors.white24),
-          if (_note != null) ...[
-            InkWell(
-              onTap: _openNoteEditor,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.edit_note, color: Colors.white70, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Note',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
+          ],
+        ),
+        body: ListView(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: _toggleComplete,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _isCompleted ? Colors.transparent : Colors.white70,
+                          width: 2,
                         ),
-                      ],
+                        color: _isCompleted ? Colors.white70 : Colors.transparent,
+                      ),
+                      child: _isCompleted
+                          ? const Icon(
+                              Icons.check,
+                              size: 16,
+                              color: Colors.black87,
+                            )
+                          : null,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _note!,
-                      style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextField(
+                      controller: _titleController,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        decoration: _isCompleted ? TextDecoration.lineThrough : null,
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (value) {
+                        _hasChanges = true;
+                        _saveTodo();
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ] else
+            const Divider(color: Colors.white24),
             ListTile(
-              leading: const Icon(Icons.edit_note, color: Colors.white70),
+              leading: const Icon(Icons.add, color: Colors.white70),
               title: Text(
-                'add_note'.tr,
+                'add_step'.tr,
                 style: TextStyle(color: Colors.white70),
               ),
-              onTap: _openNoteEditor,
+              onTap: () {
+                // TODO: Implement add step
+              },
             ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Created ${DateFormatter.formatCreatedTime(widget.todo.createdAt)}',
-                  style: TextStyle(color: Colors.white.withOpacity(0.5)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.white70),
-                  onPressed: () {
-                    widget.onDelete(widget.todo.id);
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
+            const Divider(color: Colors.white24),
+            ListTile(
+              leading: const Icon(Icons.wb_sunny_outlined, color: Colors.white70),
+              title: const Text(
+                'Added to My Day',
+                style: TextStyle(color: Colors.white70),
+              ),
+              trailing: const Icon(Icons.close, color: Colors.white70),
+              onTap: () {
+                // TODO: Implement remove from My Day
+              },
             ),
-          ),
-        ],
+            ListTile(
+              leading: const Icon(Icons.notifications_none, color: Colors.white70),
+              title: Text(
+                'remind_me'.tr,
+                style: TextStyle(color: Colors.white70),
+              ),
+              onTap: () {
+                // TODO: Implement reminder
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today, color: Colors.white70),
+              title: Text(
+                _dueDate == null ? 'add_due_date'.tr : DateFormatter.formatTaskDate(_dueDate),
+                style: const TextStyle(color: Colors.white70),
+              ),
+              trailing: _dueDate != null ? IconButton(
+                icon: const Icon(Icons.close, color: Colors.white70),
+                onPressed: _clearDueDate,
+              ) : null,
+              onTap: _showDatePicker,
+            ),
+            ListTile(
+              leading: const Icon(Icons.repeat, color: Colors.white70),
+              title: _repeatType == null || _repeatType == RepeatType.none
+                  ? Text(
+                      'repeat'.tr,
+                      style: TextStyle(color: Colors.white70),
+                    )
+                  : Text(
+                      _getRepeatText(_repeatType!),
+                      style: const TextStyle(color: Colors.blue),
+                    ),
+              trailing: _repeatType != null && _repeatType != RepeatType.none
+                  ? IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white70),
+                      onPressed: _clearRepeat,
+                    )
+                  : null,
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => RepeatSheet(
+                    initialRepeatType: _repeatType,
+                    onSave: _updateRepeatTypeAndDueDate,
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_file, color: Colors.white70),
+              title: Text(
+                'add_file'.tr,
+                style: TextStyle(color: Colors.white70),
+              ),
+              onTap: () {
+                // TODO: Implement add file
+              },
+            ),
+            const Divider(color: Colors.white24),
+            if (_note != null) ...[
+              InkWell(
+                onTap: _openNoteEditor,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.edit_note, color: Colors.white70, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Note',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _note!,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ] else
+              ListTile(
+                leading: const Icon(Icons.edit_note, color: Colors.white70),
+                title: Text(
+                  'add_note'.tr,
+                  style: TextStyle(color: Colors.white70),
+                ),
+                onTap: _openNoteEditor,
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Created ${DateFormatter.formatCreatedTime(widget.todo.created_at)}',
+                    style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                    onPressed: () {
+                      widget.onDelete(widget.todo.id);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

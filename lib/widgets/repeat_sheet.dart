@@ -17,7 +17,7 @@ class RepeatSheet extends StatefulWidget {
 }
 
 class _RepeatSheetState extends State<RepeatSheet> {
-  int? _repeatCount = 1;
+  final int? _repeatCount = 1;
   RepeatType? _selectedType;
 
   @override

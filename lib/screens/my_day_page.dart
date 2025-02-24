@@ -33,10 +33,19 @@ class _MyDayPageState extends State<MyDayPage> {
   @override
   void initState() {
     super.initState();
-    // 延迟连接 WebSocket，使用 microtask 避免阻塞 UI
-    Future.microtask(() {
+
+    // 首先加载任务列表
+    _todoController.loadTodos();
+
+  // 使用 Future.microtask 来确保在正确的时机初始化 WebSocket
+    Future.microtask(() async {
       if (_authController.isLoggedIn) {
-        _authController.connectWebSocket();
+        print('MyDayPage: Initializing WebSocket connection');
+        try {
+          await _authController.connectWebSocket();
+        } catch (e) {
+          print('MyDayPage: WebSocket connection error: $e');
+        }
       }
     });
   }
@@ -307,7 +316,7 @@ class _MyDayPageState extends State<MyDayPage> {
                         }
 
                         return TodoList(
-                          todos: _todoController.todos,
+                          todos: _todoController.sortedTodos,
                           onToggle: _todoController.toggleTodo,
                           onToggleFavorite:
                               (id) => _todoController.toggleFavorite(id),

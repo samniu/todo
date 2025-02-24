@@ -32,13 +32,13 @@ class _TaskSheetState extends State<TaskSheet> {
     final todo = widget.initialTodo;
     _titleController = TextEditingController(text: todo?.title ?? '');
     _descriptionController = TextEditingController(text: todo?.description ?? '');
-    _isFavorite = todo?.isFavorite ?? false;
+    _isFavorite = todo?.is_favorite ?? false;
     
-    if (todo?.dueDate != null) {
-      _dueDate = todo!.dueDate;
+    if (todo?.due_date != null) {
+      _dueDate = todo!.due_date;
       _dueTime = TimeOfDay(
-        hour: todo.dueDate!.hour,
-        minute: todo.dueDate!.minute,
+        hour: todo.due_date!.hour,
+        minute: todo.due_date!.minute,
       );
     } else {
       _dueDate = null;
@@ -165,8 +165,8 @@ class _TaskSheetState extends State<TaskSheet> {
       description: _descriptionController.text.trim().isEmpty
           ? null
           : _descriptionController.text.trim(),
-      dueDate: _combinedDateTime,
-      isFavorite: _isFavorite,
+      due_date: _combinedDateTime,
+      is_favorite: _isFavorite,
     );
 
     widget.onSave(todo);

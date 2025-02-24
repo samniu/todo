@@ -7,6 +7,8 @@ class LoginPage extends StatelessWidget {
   final passwordController = TextEditingController();
   final authController = Get.find<AuthController>();
 
+  LoginPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,8 +42,8 @@ class LoginPage extends StatelessWidget {
               onPressed: () async {
                 try {
                   await authController.login(
-                    emailController.text,
-                    passwordController.text,
+                    'test@example.com',//emailController.text,
+                    '123456',//passwordController.text,
                   );
                 } catch (e) {
                   Get.snackbar(

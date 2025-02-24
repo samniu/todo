@@ -33,7 +33,7 @@ class TodoItem extends StatelessWidget {
     );
       
     // 只有在有其他内容时才添加点号
-    if (todo.dueDate != null || (todo.repeatType != null && todo.repeatType != RepeatType.none) || (todo.description != null && todo.description!.isNotEmpty)) {
+    if (todo.due_date != null || (todo.repeat_type != null && todo.repeat_type != RepeatType.none) || (todo.description != null && todo.description!.isNotEmpty)) {
       items.add(const Text(
         ' • ',
         style: TextStyle(color: Colors.white70, fontSize: 12),
@@ -41,7 +41,7 @@ class TodoItem extends StatelessWidget {
     }
 
     // 添加截止日期
-    if (todo.dueDate != null) {
+    if (todo.due_date != null) {
       items.add(Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -52,7 +52,7 @@ class TodoItem extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            DateFormatter.formatTaskDate(todo.dueDate),
+            DateFormatter.formatTaskDate(todo.due_date),
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 12,
@@ -63,7 +63,7 @@ class TodoItem extends StatelessWidget {
     }
 
     // 添加重复图标
-    if (todo.repeatType != null && todo.repeatType != RepeatType.none) {
+    if (todo.repeat_type != null && todo.repeat_type != RepeatType.none) {
       if (items.isNotEmpty) {
         items.add(const SizedBox(width: 8));
       }
@@ -107,12 +107,12 @@ class TodoItem extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: todo.isCompleted ? Colors.transparent : Colors.white70,
+                  color: todo.is_completed ? Colors.transparent : Colors.white70,
                   width: 2,
                 ),
-                color: todo.isCompleted ? Colors.white70 : Colors.transparent,
+                color: todo.is_completed ? Colors.white70 : Colors.transparent,
               ),
-              child: todo.isCompleted
+              child: todo.is_completed
                   ? const Icon(
                       Icons.check,
                       size: 16,
@@ -125,15 +125,15 @@ class TodoItem extends StatelessWidget {
             todo.title,
             style: TextStyle(
               color: Colors.white,
-              decoration: todo.isCompleted ? TextDecoration.lineThrough : null,
+              decoration: todo.is_completed ? TextDecoration.lineThrough : null,
               decorationColor: Colors.white54,
             ),
           ),
           subtitle: _buildStatusRow(),
           trailing: IconButton(
             icon: Icon(
-              todo.isFavorite ? Icons.star : Icons.star_border,
-              color: todo.isFavorite ? Colors.amber : Colors.white70,
+              todo.is_favorite ? Icons.star : Icons.star_border,
+              color: todo.is_favorite ? Colors.amber : Colors.white70,
             ),
             onPressed: () => onToggleFavorite(todo.id),
           ),

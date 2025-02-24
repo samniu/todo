@@ -1,27 +1,62 @@
 import 'package:get/get.dart';
 import '../models/todo.dart';
 import '../services/storage_service.dart';
+import '../services/websocket_service.dart';
 import '../controllers/auth_controller.dart';
 
 class TodoController extends GetxController {
   final storageService = Get.find<StorageService>();
   final authController = Get.find<AuthController>();
-  
-  // 状态变量
-  var todos = <Todo>[].obs;
-  var completedTodos = <Todo>[].obs;
-  var isLoading = false.obs;
+  final webSocketService = Get.find<WebSocketService>();
+
+  // 使用 RxList 替代普通的 List
+  final todos = RxList<Todo>();
+  final completedTodos = RxList<Todo>();
+  final isLoading = false.obs;
+
+  // 获取器保持排序
+  List<Todo> get sortedTodos {
+    // final sortedList = todos.toList();
+    final sortedList = [...todos, ...completedTodos];
+    print('todos: $todos');
+    sortedList.sort((a, b) {
+      final aDate = a.created_at;
+      final bDate = b.created_at;
+      if (aDate == null || bDate == null) return 0;
+      return bDate.compareTo(aDate); // 降序排列
+    });
+    return sortedList;
+  }
+
+  List<Todo> get sortedCompletedTodos {
+    final sortedList = completedTodos.toList();
+    sortedList.sort((a, b) {
+      final aDate = a.updated_at;
+      final bDate = b.updated_at;
+      if (aDate == null || bDate == null) return 0;
+      return bDate.compareTo(aDate); // 降序排列
+    });
+    return sortedList;
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    // 只在第一次连接成功时加载数据
+    once(webSocketService.isConnected, (bool connected) {
+      if (connected) {
+        loadTodos();
+      }
+    });
+  }
 
   // 加载数据
   Future<void> loadTodos() async {
     try {
       isLoading.value = true;
-
       if (authController.isLoggedIn) {
-        // 从服务器加载数据
         await _loadFromServer();
       } else {
-        // 从本地加载数据
         await _loadFromLocal();
       }
     } catch (e) {
@@ -31,40 +66,86 @@ class TodoController extends GetxController {
     }
   }
 
-  // 从服务器加载数据
+  // 处理 WebSocket 消息
+  void handleWebSocketMessage(String type, dynamic data) {
+    print('TodoController: Handling WebSocket message of type: $type');
+    print('TodoController: Message data: $data');
+
+    if (type == 'auth_success') {
+      print('TodoController: WebSocket authentication successful');
+      return;
+    }
+
+    switch (type) {
+      case 'todo_created':
+      case 'todo_updated':
+      case 'todo_toggled':
+        final todo = Todo.fromJson(data);
+        _handleTodoUpdated(todo);
+        break;
+
+      case 'todo_deleted':
+        final todo = Todo.fromJson(data);
+        _handleTodoDeleted(todo.id.toString());
+        break;
+    }
+  }
+
+  void _handleTodoUpdated(Todo todo) {
+    print('TodoController: Handling todo updated: $todo');
+    todos.removeWhere((t) => t.id == todo.id);
+    completedTodos.removeWhere((t) => t.id == todo.id);
+
+    if (todo.is_completed) {
+      completedTodos.add(todo);
+    } else {
+      todos.add(todo);
+    }
+    _saveToLocal();
+  }
+
+  void _handleTodoDeleted(String id) {
+    print('TodoController: Handling todo deleted: $id');
+    todos.removeWhere((todo) => todo.id.toString() == id);
+    completedTodos.removeWhere((todo) => todo.id.toString() == id);
+    _saveToLocal();
+  }
+
   Future<void> _loadFromServer() async {
     try {
       final response = await GetConnect().get(
         'http://localhost:8080/api/todos',
-        headers: {
-          'Authorization': 'Bearer ${authController.token}',
-        },
+        headers: {'Authorization': 'Bearer ${authController.token}'},
       );
 
       if (response.hasError) {
         throw 'Failed to load todos from server';
       }
 
-      final List<dynamic> todoList = response.body;
-      final loadedTodos = todoList.map((json) => Todo.fromJson(json)).toList();
-      
-      // 更新内存中的数据
-      todos.value = loadedTodos.where((todo) => !todo.isCompleted).toList();
-      completedTodos.value = loadedTodos.where((todo) => todo.isCompleted).toList();
-      
-      // 同步到本地存储
+      final data = response.body['data'] as List<dynamic>;
+      final loadedTodos = data.map((json) => Todo.fromJson(json)).toList();
+
+      todos.assignAll(loadedTodos.where((todo) => !todo.is_completed).toList());
+      completedTodos.assignAll(
+        loadedTodos.where((todo) => todo.is_completed).toList(),
+      );
+
       await _saveToLocal();
     } catch (e) {
-      print('Server load failed, falling back to local: $e');
+      print('Server load failed: $e');
       await _loadFromLocal();
     }
   }
 
-  // 从本地加载数据
   Future<void> _loadFromLocal() async {
     final localTodos = await storageService.loadTodos();
-    todos.value = localTodos.where((todo) => !todo.isCompleted).toList();
-    completedTodos.value = localTodos.where((todo) => todo.isCompleted).toList();
+    todos.assignAll(localTodos.where((todo) => !todo.is_completed));
+    completedTodos.assignAll(localTodos.where((todo) => todo.is_completed));
+  }
+
+  Future<void> _saveToLocal() async {
+    final allTodos = [...todos, ...completedTodos];
+    await storageService.saveTodos(allTodos);
   }
 
   // 添加任务
@@ -81,35 +162,22 @@ class TodoController extends GetxController {
       final response = await GetConnect().post(
         'http://localhost:8080/api/todos',
         todo.toJson(),
-        headers: {
-          'Authorization': 'Bearer ${authController.token}',
-        },
+        headers: {'Authorization': 'Bearer ${authController.token}'},
       );
 
       if (response.hasError) {
         throw 'Failed to add todo to server';
       }
 
-      // 使用服务器返回的数据（包含服务器生成的ID）
-      final newTodo = Todo.fromJson(response.body);
-      
-      // 更新内存中的数据
-      if (newTodo.isCompleted) {
-        completedTodos.add(newTodo);
-      } else {
-        todos.add(newTodo);
-      }
-
-      // 同步到本地存储
-      await _saveToLocal();
+      // WebSocket 会处理状态更新
     } catch (e) {
-      print('Server add failed, saving locally: $e');
+      print('Server add failed: $e');
       await _addToLocal(todo);
     }
   }
 
   Future<void> _addToLocal(Todo todo) async {
-    if (todo.isCompleted) {
+    if (todo.is_completed) {
       completedTodos.add(todo);
     } else {
       todos.add(todo);
@@ -117,61 +185,104 @@ class TodoController extends GetxController {
     await _saveToLocal();
   }
 
-  // 更新任务状态（切换完成状态）
-  Future<void> toggleTodo(String id) async {
-    if (authController.isLoggedIn) {
-      await _toggleOnServer(id);
-    } else {
-      await _toggleLocally(id);
-    }
-  }
-
-  Future<void> _toggleOnServer(String id) async {
+  // 更新任务
+  Future<void> updateTodo(Todo todo) async {
     try {
-      final response = await GetConnect().patch(
-        'http://localhost:8080/api/todos/$id/toggle',
-        null,
-        headers: {
-          'Authorization': 'Bearer ${authController.token}',
-        },
-      );
+      if (authController.isLoggedIn) {
+        final response = await GetConnect().put(
+          'http://localhost:8080/api/todos/${todo.id}',
+          todo.toJson(),
+          headers: {'Authorization': 'Bearer ${authController.token}'},
+        );
 
-      if (response.hasError) {
-        throw 'Failed to toggle todo on server';
+        if (response.hasError) {
+          throw 'Failed to update todo on server';
+        }
+        // WebSocket 会处理状态更新
+      } else {
+        _handleTodoUpdated(todo);
       }
-
-      // 服务器操作成功后更新本地状态
-      await _toggleLocally(id);
     } catch (e) {
-      print('Server toggle failed, toggling locally: $e');
-      await _toggleLocally(id);
+      print('Error updating todo: $e');
+      Get.snackbar('Error', 'Failed to update todo');
     }
   }
 
-  Future<void> _toggleLocally(String id) async {
-    var todo = todos.firstWhere(
-      (t) => t.id == id,
-      orElse: () => completedTodos.firstWhere((t) => t.id == id),
-    );
+  // 删除任务
+  Future<void> deleteTodo(String id) async {
+    try {
+      if (authController.isLoggedIn) {
+        final response = await GetConnect().delete(
+          'http://localhost:8080/api/todos/$id',
+          headers: {'Authorization': 'Bearer ${authController.token}'},
+        );
 
-    var updatedTodo = todo.copyWith(isCompleted: !todo.isCompleted);
-
-    if (updatedTodo.isCompleted) {
-      todos.remove(todo);
-      completedTodos.add(updatedTodo);
-    } else {
-      completedTodos.remove(todo);
-      todos.add(updatedTodo);
+        if (response.hasError) {
+          throw 'Failed to delete todo from server';
+        }
+        // WebSocket 会处理状态更新
+      } else {
+        _handleTodoDeleted(id);
+      }
+    } catch (e) {
+      print('Error deleting todo: $e');
+      Get.snackbar('Error', 'Failed to delete todo');
     }
-
-    todos.refresh();
-    completedTodos.refresh();
-    await _saveToLocal();
   }
 
-  // 保存到本地存储
-  Future<void> _saveToLocal() async {
-    final allTodos = [...todos, ...completedTodos];
-    await storageService.saveTodos(allTodos);
+  // 切换任务完成状态
+  Future<void> toggleTodo(String id) async {
+    try {
+      if (authController.isLoggedIn) {
+        final response = await GetConnect().patch(
+          'http://localhost:8080/api/todos/$id/toggle',
+          null,
+          headers: {'Authorization': 'Bearer ${authController.token}'},
+        );
+
+        if (response.hasError) {
+          throw 'Failed to toggle todo on server';
+        }
+        // WebSocket 会处理状态更新
+      } else {
+        var todo = todos.firstWhere(
+          (t) => t.id.toString() == id,
+          orElse: () => completedTodos.firstWhere((t) => t.id.toString() == id),
+        );
+        var updatedTodo = todo.copyWith(is_completed: !todo.is_completed);
+        _handleTodoUpdated(updatedTodo);
+      }
+    } catch (e) {
+      print('Error toggling todo: $e');
+      Get.snackbar('Error', 'Failed to toggle todo');
+    }
+  }
+
+  // 切换收藏状态
+  Future<void> toggleFavorite(String id) async {
+    try {
+      if (authController.isLoggedIn) {
+        final response = await GetConnect().patch(
+          'http://localhost:8080/api/todos/$id/favorite',
+          null,
+          headers: {'Authorization': 'Bearer ${authController.token}'},
+        );
+
+        if (response.hasError) {
+          throw 'Failed to toggle favorite on server';
+        }
+        // WebSocket 会处理状态更新
+      } else {
+        var todo = todos.firstWhere(
+          (t) => t.id.toString() == id,
+          orElse: () => completedTodos.firstWhere((t) => t.id.toString() == id),
+        );
+        var updatedTodo = todo.copyWith(is_favorite: !todo.is_favorite);
+        _handleTodoUpdated(updatedTodo);
+      }
+    } catch (e) {
+      print('Error toggling favorite: $e');
+      Get.snackbar('Error', 'Failed to toggle favorite');
+    }
   }
 }

@@ -26,8 +26,8 @@ class _TodoListState extends State<TodoList> {
 
   @override
   Widget build(BuildContext context) {
-    final incompleteTodos = widget.todos.where((todo) => !todo.isCompleted).toList();
-    final completedTodos = widget.todos.where((todo) => todo.isCompleted).toList();
+    final incompleteTodos = widget.todos.where((todo) => !todo.is_completed).toList();
+    final completedTodos = widget.todos.where((todo) => todo.is_completed).toList();
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -57,7 +57,7 @@ class _TodoListState extends State<TodoList> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'completed'.tr + ' (${completedTodos.length})',
+                    '${'completed'.tr} (${completedTodos.length})',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,

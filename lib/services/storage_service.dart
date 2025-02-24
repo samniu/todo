@@ -18,7 +18,7 @@ class StorageService {
     return todoStrings
         .map((str) => Todo.fromJson(jsonDecode(str)))
         .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        ..sort((a, b) => b.created_at.compareTo(a.created_at));
   }
 
   Future<void> saveTodos(List<Todo> todos) async {
