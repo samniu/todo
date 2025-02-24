@@ -3,98 +3,119 @@ import 'repeat_type.dart';
 
 class Todo {
   final String id;
+  final int? user_id;
   String title;
   String? description;
-  bool isCompleted;
-  bool isFavorite;
-  DateTime createdAt;
-  DateTime? dueDate;
-  String? listId;
+  bool is_completed;
+  bool is_favorite;
+  DateTime created_at;
+  DateTime? updated_at;
+  DateTime? due_date;
+  String? list_id;
   int? position;
-  final RepeatType? repeatType;
+  final RepeatType? repeat_type;
+  String? note;
 
   Todo({
     String? id,
+    this.user_id,
     required this.title,
     this.description,
-    this.isCompleted = false,
-    this.isFavorite = false,
-    DateTime? createdAt,
-    this.dueDate,
-    this.listId,
+    this.is_completed = false,
+    this.is_favorite = false,
+    DateTime? created_at,
+    this.updated_at,
+    this.due_date,
+    this.list_id,
     this.position,
-    this.repeatType,
+    this.repeat_type,
+    this.note,
   }) : id = id ?? const Uuid().v4(),
-       createdAt = createdAt ?? DateTime.now();
+       created_at = created_at ?? DateTime.now().toUtc();
 
   factory Todo.fromJson(Map<String, dynamic> json) {
     return Todo(
-      id: json['id'] as String,
+      id: json['id'].toString(),
+      user_id: json['user_id'] as int?,
       title: json['title'] as String,
       description: json['description'] as String?,
-      isCompleted: json['isCompleted'] as bool,
-      isFavorite: json['isFavorite'] as bool,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      dueDate:
-          json['dueDate'] != null
-              ? DateTime.parse(json['dueDate'] as String)
-              : null,
-      listId: json['listId'] as String?,
+      is_completed: json['is_completed'] as bool? ?? false,
+      is_favorite: json['is_favorite'] as bool? ?? false,
+      created_at: DateTime.parse(json['created_at']).toLocal(), // 转换为本地时间
+      updated_at: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at']).toLocal() // 转换为本地时间
+          : null,
+      due_date: json['due_date'] != null 
+          ? DateTime.parse(json['due_date']).toLocal() // 转换为本地时间
+          : null,
+      list_id: json['list_id'] as String?,
       position: json['position'] as int?,
-      repeatType: json['repeatType'] != null 
+      repeat_type: json['repeat_type'] != null 
           ? RepeatType.values.firstWhere(
-              (e) => e.toString() == json['repeatType'],
+              (e) => e.toString().split('.').last == json['repeat_type'], // 解析字符串为枚举
               orElse: () => RepeatType.none,
             )
-          : null,      
+          : null,
+      note: json['note'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': user_id,
       'title': title,
       'description': description,
-      'isCompleted': isCompleted,
-      'isFavorite': isFavorite,
-      'createdAt': createdAt.toIso8601String(),
-      'dueDate': dueDate?.toIso8601String(),
-      'listId': listId,
+      'is_completed': is_completed,
+      'is_favorite': is_favorite,
+      'created_at': created_at.toUtc().toIso8601String(), // 确保存储 UTC
+      'updated_at': updated_at?.toUtc().toIso8601String(), // 确保存储 UTC
+      'due_date': due_date?.toUtc().toIso8601String(), // 确保存储 UTC
+      'list_id': list_id,
       'position': position,
-      'repeatType': repeatType?.toString(),
+      'repeat_type': repeat_type?.toString().split('.').last, // 将枚举转换为字符串
+      'note': note,
     };
   }
 
   Todo copyWith({
     String? title,
     String? description,
-    bool? isCompleted,
-    bool? isFavorite,
-    DateTime? dueDate,
-    String? listId,
+    bool? is_completed,
+    bool? is_favorite,
+    DateTime? due_date,
+    String? list_id,
     int? position,
-    RepeatType? repeatType,
-    bool? clearDescription,  // 标记是否清空 description
-    bool? clearDueDate,      // 标记是否清空 dueDate
-    bool? clearListId,       // 其他可能需要清空的字段
+    RepeatType? repeat_type,
+    String? note,
+    bool? clear_description,
+    bool? clear_due_date,
+    bool? clear_list_id,
+    bool? clear_note,
   }) {
     return Todo(
       id: id,
+      user_id: user_id,
       title: title ?? this.title,
-      description: clearDescription == true ? null : (description ?? this.description),
-      isCompleted: isCompleted ?? this.isCompleted,
-      isFavorite: isFavorite ?? this.isFavorite,
-      createdAt: createdAt,
-      dueDate: clearDueDate == true ? null : (dueDate ?? this.dueDate), // 允许显式清除
-      listId: clearListId == true ? null : (listId ?? this.listId),
+      description: clear_description == true ? null : (description ?? this.description),
+      is_completed: is_completed ?? this.is_completed,
+      is_favorite: is_favorite ?? this.is_favorite,
+      created_at: created_at,
+      updated_at: DateTime.now().toUtc(),
+      due_date: clear_due_date == true ? null : (due_date ?? this.due_date),
+      list_id: clear_list_id == true ? null : (list_id ?? this.list_id),
       position: position ?? this.position,
-      repeatType: repeatType ?? this.repeatType,
+      repeat_type: repeat_type ?? this.repeat_type,
+      note: clear_note == true ? null : (note ?? this.note),
     );
   }
 
   @override
   String toString() {
-    return 'Todo(id: $id, title: $title, description: $description,isCompleted: $isCompleted, isFavorite: $isFavorite, '
-           'createdAt: $createdAt, dueDate: $dueDate, listId: $listId, position: $position, repeatType: $repeatType)';
+    return 'Todo(id: $id, title: $title, description: $description, '
+           'is_completed: $is_completed, is_favorite: $is_favorite, '
+           'created_at: $created_at, updated_at: $updated_at, '
+           'due_date: $due_date, list_id: $list_id, position: $position, '
+           'repeat_type: $repeat_type, note: $note)';
   }
 }

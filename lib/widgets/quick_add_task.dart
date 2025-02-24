@@ -48,7 +48,7 @@ class _QuickAddTaskState extends State<QuickAddTask> {
     widget.onSave(
       Todo(
         title: title,
-        dueDate: _quickAddController.selectedDate,
+        due_date: _quickAddController.selectedDate,
         description: _quickAddController.note,
       ),
     );
@@ -170,7 +170,7 @@ class _QuickAddTaskState extends State<QuickAddTask> {
                   onPressed: () {
                     showModalBottomSheet(
                       context: context,
-                      isScrollControlled: true,
+                      isScrollControlled: false,
                       backgroundColor: Colors.transparent,
                       builder:
                           (context) => NoteSheet(

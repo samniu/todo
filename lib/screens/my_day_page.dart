@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 import '../models/todo.dart';
 import '../services/storage_service.dart';
 import '../widgets/todo_list.dart';
 import '../widgets/quick_add_task.dart';
 import '../widgets/task_sheet.dart';
 import '../utils/date_formatter.dart';
-import 'task_detail_page.dart';
-import 'package:get/get.dart';
 import '../controllers/quick_add_controller.dart';
+import '../controllers/todo_controller.dart';
+import '../controllers/auth_controller.dart';
+import 'task_detail_page.dart';
 
 class MyDayPage extends StatefulWidget {
   final StorageService storageService;
@@ -21,97 +23,37 @@ class MyDayPage extends StatefulWidget {
 
 class _MyDayPageState extends State<MyDayPage> {
   final _quickAddController = Get.find<QuickAddController>();
-  List<Todo> _todos = [];
-  bool _isLoading = true;
+  final _todoController = Get.find<TodoController>();
+  final _authController = Get.find<AuthController>();
+
   final FocusNode _quickAddFocusNode = FocusNode();
   bool _showingQuickAdd = false;
   bool _showingDatePicker = false;
-  // DateTime? _selectedDate;
-  // String? _quickAddText;
 
   @override
   void initState() {
     super.initState();
-    _loadTodos();
+
+    // 首先加载任务列表
+    _todoController.loadTodos();
+
+  // 使用 Future.microtask 来确保在正确的时机初始化 WebSocket
+    Future.microtask(() async {
+      if (_authController.isLoggedIn) {
+        print('MyDayPage: Initializing WebSocket connection');
+        try {
+          await _authController.connectWebSocket();
+        } catch (e) {
+          print('MyDayPage: WebSocket connection error: $e');
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
     _quickAddFocusNode.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadTodos() async {
-    try {
-      final todos = await widget.storageService.loadTodos();
-      setState(() {
-        _todos = todos;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _saveTodos() async {
-    try {
-      print("Todos saved _todos: $_todos"); 
-      await widget.storageService.saveTodos(_todos);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('保存失败，请重试'), backgroundColor: Colors.red),
-      );
-    }
-  }
-
-  void _addTodo(Todo todo) {
-    setState(() {
-      _todos.add(todo);
-      _saveTodos();
-    });
-  }
-
-  void _editTodo(Todo todo) {
-    setState(() {
-      final index = _todos.indexWhere((t) => t.id == todo.id);
-      if (index != -1) {
-        _todos[index] = todo;
-        _saveTodos();
-      }
-    });
-  }
-
-  void _deleteTodo(String id) {
-    setState(() {
-      _todos.removeWhere((todo) => todo.id == id);
-      _saveTodos();
-    });
-  }
-
-  void _toggleTodo(String id) {
-    setState(() {
-      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
-      if (todoIndex != -1) {
-        _todos[todoIndex] = _todos[todoIndex].copyWith(
-          isCompleted: !_todos[todoIndex].isCompleted,
-        );
-        _saveTodos();
-      }
-    });
-  }
-
-  void _toggleFavorite(String id) {
-    setState(() {
-      final todoIndex = _todos.indexWhere((todo) => todo.id == id);
-      if (todoIndex != -1) {
-        _todos[todoIndex] = _todos[todoIndex].copyWith(
-          isFavorite: !_todos[todoIndex].isFavorite,
-        );
-        _saveTodos();
-      }
-    });
   }
 
   void _showTaskSheet([Todo? todo]) {
@@ -122,23 +64,12 @@ class _MyDayPageState extends State<MyDayPage> {
       builder:
           (context) => TaskSheet(
             initialTodo: todo,
-            onSave: todo == null ? _addTodo : _editTodo,
-            onDelete: todo == null ? null : _deleteTodo,
+            onSave:
+                todo == null
+                    ? _todoController.addTodo
+                    : _todoController.updateTodo,
+            onDelete: todo == null ? null : _todoController.deleteTodo,
           ),
-    );
-  }
-
-  void _onTaskTap(Todo todo) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => TaskDetailPage(
-              todo: todo,
-              onSave: _editTodo,
-              onDelete: _deleteTodo,
-            ),
-      ),
     );
   }
 
@@ -159,7 +90,6 @@ class _MyDayPageState extends State<MyDayPage> {
     setState(() {
       _showingQuickAdd = false;
       _showingDatePicker = false;
-      // _selectedDate = null;
     });
     FocusManager.instance.primaryFocus?.unfocus();
   }
@@ -174,7 +104,6 @@ class _MyDayPageState extends State<MyDayPage> {
 
   void _hideDatePickerPage(DateTime? date) {
     if (date != null) {
-      // _selectedDate = date;
       _quickAddController.setSelectedDate(date);
     }
 
@@ -194,12 +123,11 @@ class _MyDayPageState extends State<MyDayPage> {
     final tomorrow = now.add(const Duration(days: 1));
     final nextWeek = now.add(const Duration(days: 7));
 
-    // 使用 SafeArea 或者获取底部安全区域高度
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
       color: Colors.black87,
-      padding: EdgeInsets.only(bottom: bottomPadding), // 添加底部安全区域padding
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -285,7 +213,7 @@ class _MyDayPageState extends State<MyDayPage> {
               }
             },
           ),
-          SizedBox(height: 8), // 可选：添加一些额外的底部间距
+          SizedBox(height: 8),
         ],
       ),
     );
@@ -299,17 +227,28 @@ class _MyDayPageState extends State<MyDayPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.menu),
           onPressed: () {
-            // TODO: Implement navigation
+            // TODO: Implement menu
           },
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.lightbulb_outline),
-            onPressed: () {
-              // TODO: Implement suggestions
-            },
+            icon: const Icon(Icons.refresh),
+            onPressed: () => _todoController.loadTodos(),
+          ),
+          Obx(
+            () => IconButton(
+              icon: Icon(
+                _authController.isLoggedIn ? Icons.cloud_done : Icons.cloud_off,
+                color: _authController.isLoggedIn ? Colors.green : Colors.grey,
+              ),
+              onPressed: () {
+                if (!_authController.isLoggedIn) {
+                  Get.toNamed('/login');
+                }
+              },
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.more_vert),
@@ -369,24 +308,33 @@ class _MyDayPageState extends State<MyDayPage> {
                       ),
                     ),
                     Expanded(
-                      child: TodoList(
-                        todos: _todos,
-                        onToggle: _toggleTodo,
-                        onToggleFavorite: _toggleFavorite,
-                        onTaskTap: (todo) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => TaskDetailPage(
-                                    todo: todo,
-                                    onSave: _editTodo,
-                                    onDelete: _deleteTodo,
-                                  ),
-                            ),
+                      child: Obx(() {
+                        if (_todoController.isLoading.value) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
                           );
-                        },
-                      ),
+                        }
+
+                        return TodoList(
+                          todos: _todoController.sortedTodos,
+                          onToggle: _todoController.toggleTodo,
+                          onToggleFavorite:
+                              (id) => _todoController.toggleFavorite(id),
+                          onTaskTap: (todo) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => TaskDetailPage(
+                                      todo: todo,
+                                      onSave: _todoController.updateTodo,
+                                      onDelete: _todoController.deleteTodo,
+                                    ),
+                              ),
+                            );
+                          },
+                        );
+                      }),
                     ),
                     if (!_showingQuickAdd && !_showingDatePicker)
                       Material(
@@ -404,19 +352,20 @@ class _MyDayPageState extends State<MyDayPage> {
                                   size: 24,
                                 ),
                                 const SizedBox(width: 16),
-                                // 使用 Obx 监听 title 变化
                                 Obx(() {
                                   final savedTitle = _quickAddController.title;
-                                  return Text(
-                                    savedTitle.isNotEmpty
-                                        ? savedTitle
-                                        : 'add_task'.tr,
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 16,
-                                    ),
-                                    // 添加长文本省略
-                                    overflow: TextOverflow.ellipsis,
+                                  return GestureDetector(
+                                    onTap: _showQuickAdd, // 确保点击事件可以触发
+                                    child: Text(
+                                      savedTitle.isNotEmpty
+                                          ? savedTitle
+                                          : 'add_task'.tr,
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 16,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),                                  
                                   );
                                 }),
                               ],
@@ -429,10 +378,10 @@ class _MyDayPageState extends State<MyDayPage> {
               ),
             ),
           ),
-          // 遮罩层
           if (_showingQuickAdd || _showingDatePicker)
             Positioned.fill(
               child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
                 onTap: () {
                   if (_showingQuickAdd) {
                     _hideQuickAdd();
@@ -444,36 +393,28 @@ class _MyDayPageState extends State<MyDayPage> {
                 child: Container(color: Colors.black.withOpacity(0.5)),
               ),
             ),
-          // 快速添加任务面板
           if (_showingQuickAdd && !_showingDatePicker)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: GestureDetector(
-                onTap: () {}, // 防止点击事件穿透
-                child: QuickAddTask(
-                  focusNode: _quickAddFocusNode,
-                  onSave: (todo) {
-                    _addTodo(todo);
-                    _quickAddController.clearAll(); // 保存后清除状态
-                    _hideQuickAdd();
-                  },
-                  onCancel: _hideQuickAdd,
-                  onDateSelect: _showDatePickerPage,
-                ),
+              child: QuickAddTask(
+                focusNode: _quickAddFocusNode,
+                onSave: (todo) {
+                  _todoController.addTodo(todo);
+                  _quickAddController.clearAll();
+                  _hideQuickAdd();
+                },
+                onCancel: _hideQuickAdd,
+                onDateSelect: _showDatePickerPage,
               ),
             ),
-          // 日期选择面板
           if (_showingDatePicker)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: GestureDetector(
-                onTap: () {}, // 防止点击事件穿透
-                child: _buildDatePickerPage(),
-              ),
+              child: _buildDatePickerPage(),
             ),
         ],
       ),
