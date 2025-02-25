@@ -27,4 +27,11 @@ class StorageService {
         .toList();
     await _prefs.setStringList(_todoKey, todoStrings);
   }
+
+  //离线任务上传逻辑
+  Future<List<Todo>> getTodos() async {
+    final todoStrings = _prefs.getStringList(_todoKey) ?? [];
+    return todoStrings.map((todoString) => Todo.fromJson(jsonDecode(todoString))).toList();
+  }
+
 }

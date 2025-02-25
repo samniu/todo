@@ -1,8 +1,11 @@
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
+
 import '../models/todo.dart';
 import '../services/storage_service.dart';
 import '../services/websocket_service.dart';
 import '../controllers/auth_controller.dart';
+import '../config/api_config.dart';
 
 class TodoController extends GetxController {
   final storageService = Get.find<StorageService>();
@@ -114,7 +117,7 @@ class TodoController extends GetxController {
   Future<void> _loadFromServer() async {
     try {
       final response = await GetConnect().get(
-        'http://localhost:8080/api/todos',
+        ApiConfig.getTodos(),
         headers: {'Authorization': 'Bearer ${authController.token}'},
       );
 
@@ -150,17 +153,22 @@ class TodoController extends GetxController {
 
   // 添加任务
   Future<void> addTodo(Todo todo) async {
-    if (authController.isLoggedIn) {
+  if (authController.isLoggedIn) {
+    try {
       await _addToServer(todo);
-    } else {
-      await _addToLocal(todo);
+    } catch (e) {
+      print('Server add failed: $e');
+      await _addToLocal(todo); // 保存到本地
     }
+  } else {
+    await _addToLocal(todo); // 保存到本地
+  }
   }
 
   Future<void> _addToServer(Todo todo) async {
     try {
       final response = await GetConnect().post(
-        'http://localhost:8080/api/todos',
+        ApiConfig.createTodos(),
         todo.toJson(),
         headers: {'Authorization': 'Bearer ${authController.token}'},
       );
@@ -169,14 +177,23 @@ class TodoController extends GetxController {
         throw 'Failed to add todo to server';
       }
 
-      // WebSocket 会处理状态更新
+      // 在这里处理服务器返回的任务数据
+      final serverTodo = Todo.fromJson(response.body);
+      // 根据需要执行其他操作，如替换本地任务 ID
+      _replaceLocalTodo(todo, serverTodo);
+
     } catch (e) {
       print('Server add failed: $e');
-      await _addToLocal(todo);
+      throw e; // 将异常抛出，由 addTodo 处理
     }
   }
 
   Future<void> _addToLocal(Todo todo) async {
+    // 只有当任务没有 id（即本地创建的）且 localId 为空时，才生成 localId
+    if (todo.id.isEmpty && (todo.local_id.isEmpty)) {
+      todo = todo.copyWith(local_id: const Uuid().v4());
+    }
+
     if (todo.is_completed) {
       completedTodos.add(todo);
     } else {
@@ -190,7 +207,7 @@ class TodoController extends GetxController {
     try {
       if (authController.isLoggedIn) {
         final response = await GetConnect().put(
-          'http://localhost:8080/api/todos/${todo.id}',
+          ApiConfig.getTodoById(todo.id),
           todo.toJson(),
           headers: {'Authorization': 'Bearer ${authController.token}'},
         );
@@ -213,7 +230,8 @@ class TodoController extends GetxController {
     try {
       if (authController.isLoggedIn) {
         final response = await GetConnect().delete(
-          'http://localhost:8080/api/todos/$id',
+          // 'http://localhost:8080/api/todos/$id',
+          ApiConfig.getTodoById(id),
           headers: {'Authorization': 'Bearer ${authController.token}'},
         );
 
@@ -235,7 +253,8 @@ class TodoController extends GetxController {
     try {
       if (authController.isLoggedIn) {
         final response = await GetConnect().patch(
-          'http://localhost:8080/api/todos/$id/toggle',
+          // 'http://localhost:8080/api/todos/$id/toggle',
+          ApiConfig.toggleTodoById(id),
           null,
           headers: {'Authorization': 'Bearer ${authController.token}'},
         );
@@ -263,7 +282,8 @@ class TodoController extends GetxController {
     try {
       if (authController.isLoggedIn) {
         final response = await GetConnect().patch(
-          'http://localhost:8080/api/todos/$id/favorite',
+          // 'http://localhost:8080/api/todos/$id/favorite',
+          ApiConfig.favoriteTodoById(id),
           null,
           headers: {'Authorization': 'Bearer ${authController.token}'},
         );
@@ -285,4 +305,50 @@ class TodoController extends GetxController {
       Get.snackbar('Error', 'Failed to toggle favorite');
     }
   }
+
+  //离线任务上传逻辑
+  // 检查是否有未同步的任务
+  bool hasUnsyncedTasks() {
+    return todos.any((todo) => todo.id.isEmpty) || 
+          completedTodos.any((todo) => todo.id.isEmpty);
+  }
+
+
+    // 同步任务
+  Future<void> syncTodos() async {
+    final unsyncedTodos = todos.where((todo) => todo.id.isEmpty).toList();
+    final unsyncedCompletedTodos = completedTodos.where((todo) => todo.id.isEmpty).toList();
+    final allUnsyncedTodos = [...unsyncedTodos, ...unsyncedCompletedTodos];
+
+    for (final todo in allUnsyncedTodos) {
+      try {
+        await _addToServer(todo);
+      } catch (e) {
+        print('Failed to sync todo: ${todo.local_id}, error: $e');
+      }
+    }
+
+    // 同步完成后重新加载任务列表
+    await loadTodos();
+  }
+
+  void _replaceLocalTodo(Todo oldTodo, Todo newTodo) {
+    // 在本地查找旧任务并替换为服务器返回的任务
+    final index = todos.indexWhere((t) => t.local_id == oldTodo.local_id);
+    if (index != -1) {
+      todos[index] = newTodo;
+    }
+
+    final completedIndex = completedTodos.indexWhere((t) => t.local_id == oldTodo.local_id);
+    if (completedIndex != -1) {
+      completedTodos[completedIndex] = newTodo;
+    }
+  }
+
+
+  Future<void> removeTodo(String localId) async {
+    todos.removeWhere((todo) => todo.local_id == localId);
+    completedTodos.removeWhere((todo) => todo.local_id == localId);
+    await _saveToLocal();
+  } 
 }

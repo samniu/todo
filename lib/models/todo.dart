@@ -2,7 +2,8 @@ import 'package:uuid/uuid.dart';
 import 'repeat_type.dart';
 
 class Todo {
-  final String id;
+  final String id; // 后端生成的ID
+  final String local_id; // 本地生成的ID
   final int? user_id;
   String title;
   String? description;
@@ -18,6 +19,7 @@ class Todo {
 
   Todo({
     String? id,
+    String? local_id,
     this.user_id,
     required this.title,
     this.description,
@@ -30,12 +32,14 @@ class Todo {
     this.position,
     this.repeat_type,
     this.note,
-  }) : id = id ?? const Uuid().v4(),
+  }) : id = id ?? '',
+       local_id = local_id ?? const Uuid().v4(), // 生成本地ID
        created_at = created_at ?? DateTime.now().toUtc();
 
   factory Todo.fromJson(Map<String, dynamic> json) {
     return Todo(
       id: json['id'].toString(),
+      local_id: json['localId'] as String?, // 反序列化时读取 localId
       user_id: json['user_id'] as int?,
       title: json['title'] as String,
       description: json['description'] as String?,
@@ -63,6 +67,7 @@ class Todo {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'local_id': local_id, // 序列化时包含 localId
       'user_id': user_id,
       'title': title,
       'description': description,
@@ -79,6 +84,7 @@ class Todo {
   }
 
   Todo copyWith({
+    String? local_id, // 添加 localId
     String? title,
     String? description,
     bool? is_completed,
@@ -95,6 +101,7 @@ class Todo {
   }) {
     return Todo(
       id: id,
+      local_id: local_id ?? this.local_id, // 允许更新 localId
       user_id: user_id,
       title: title ?? this.title,
       description: clear_description == true ? null : (description ?? this.description),
@@ -112,7 +119,7 @@ class Todo {
 
   @override
   String toString() {
-    return 'Todo(id: $id, title: $title, description: $description, '
+    return 'Todo(id: $id, localId: $local_id,title: $title, description: $description, '
            'is_completed: $is_completed, is_favorite: $is_favorite, '
            'created_at: $created_at, updated_at: $updated_at, '
            'due_date: $due_date, list_id: $list_id, position: $position, '

@@ -250,6 +250,22 @@ class _MyDayPageState extends State<MyDayPage> {
               },
             ),
           ),
+          // 添加状态按钮
+          Obx(
+            () => IconButton(
+              icon: Icon(
+                _todoController.hasUnsyncedTasks() ? Icons.sync_problem : Icons.sync,
+                color: _todoController.hasUnsyncedTasks() ? Colors.orange : Colors.white,
+              ),
+              onPressed: () async {
+                if (_authController.isLoggedIn) {
+                  await _todoController.syncTodos();
+                } else {
+                  Get.toNamed('/login');
+                }
+              },
+            ),
+          ),          
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () {

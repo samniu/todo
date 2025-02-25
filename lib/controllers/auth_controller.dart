@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:get_storage/get_storage.dart';
 import '../services/websocket_service.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class AuthController extends GetxController {
   final storage = GetStorage();
@@ -34,7 +35,7 @@ class AuthController extends GetxController {
     print('AuthController: Login $username, $password');
 
     final response = await http.post(
-      Uri.parse('http://localhost:8080/api/login'),  // Android 模拟器改为10.0.2.2
+      Uri.parse(ApiConfig.login()),  // Android 模拟器改为10.0.2.2
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -118,7 +119,7 @@ class AuthController extends GetxController {
       if (isLoggedIn) {
         // 调用登出接口
         final response = await GetConnect().post(
-          'http://localhost:8080/api/logout',
+          ApiConfig.logout(),
           null,
           headers: {
             'Authorization': 'Bearer ${_token.value}',

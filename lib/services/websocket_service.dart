@@ -3,6 +3,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:get/get.dart';
 import '../controllers/todo_controller.dart';
 import '../controllers/auth_controller.dart';
+import '../config/api_config.dart';
 
 class WebSocketService extends GetxService {
   WebSocketChannel? channel;
@@ -18,7 +19,8 @@ class WebSocketService extends GetxService {
     try {
       print('WebSocketService: Initiating connection...');
       
-      final wsUrl = Uri.parse('ws://localhost:8080/api/ws');
+      // final wsUrl = Uri.parse('ws://localhost:8080/api/ws');
+      final wsUrl = Uri.parse(ApiConfig.wsUrl);
       channel = WebSocketChannel.connect(wsUrl);
 
       // 等待连接建立
