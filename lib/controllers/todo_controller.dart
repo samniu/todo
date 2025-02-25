@@ -178,7 +178,7 @@ class TodoController extends GetxController {
       }
 
       // 在这里处理服务器返回的任务数据
-      final serverTodo = Todo.fromJson(response.body);
+      final serverTodo = Todo.fromJson(response.body['data']);
       // 根据需要执行其他操作，如替换本地任务 ID
       _replaceLocalTodo(todo, serverTodo);
 

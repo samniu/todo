@@ -1,7 +1,7 @@
 class ApiConfig {
   // 基础 URL
-  static const String baseUrl = 'http://localhost:8080/api';
-  // static const String baseUrl = 'http://192.168.1.198:8080/api';
+  // static const String baseUrl = 'http://localhost:8080/api';
+  static const String baseUrl = 'http://192.168.1.198:8080/api';
 
   // API 端点
   static String login() => '$baseUrl/login';  // 登录
@@ -13,6 +13,6 @@ class ApiConfig {
   static String favoriteTodoById(String id) => '$baseUrl/todos/$id/favorite';  // 收藏 todo
 
   // WebSocket URL
-  static const String wsUrl = 'ws://localhost:8080/api/ws';
-  // static const String wsUrl = 'ws://192.168.1.198:8080/api/ws';
+  // static const String wsUrl = 'ws://localhost:8080/api/ws';
+  static const String wsUrl = 'ws://192.168.1.198:8080/api/ws';
 }
