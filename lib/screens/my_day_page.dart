@@ -337,17 +337,13 @@ class _MyDayPageState extends State<MyDayPage> {
                           onToggleFavorite:
                               (id) => _todoController.toggleFavorite(id),
                           onTaskTap: (todo) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => TaskDetailPage(
-                                      todo: todo,
-                                      onSave: _todoController.updateTodo,
-                                      onDelete: _todoController.deleteTodo,
-                                    ),
+                            Get.to(
+                              () => TaskDetailPage(
+                                todo: todo,
+                                onSave: _todoController.updateTodo,
+                                onDelete: _todoController.deleteTodo,
                               ),
-                            );
+                            );                            
                           },
                         );
                       }),

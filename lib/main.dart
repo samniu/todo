@@ -61,7 +61,8 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-
+      defaultTransition: Transition.cupertino, // 默认使用 iOS 风格转场
+      popGesture: true,  // 全局启用侧滑返回
       // 路由配置
       initialRoute: '/',
       getPages: [
@@ -82,6 +83,8 @@ class MyApp extends StatelessWidget {
         GetPage(
           name: '/my-day',
           page: () => MyDayPage(storageService: storageService),
+          transition: Transition.cupertino, 
+          popGesture: true, // 显式启用侧滑返回手势          
         ),
       ],
 
