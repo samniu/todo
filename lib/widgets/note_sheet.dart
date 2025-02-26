@@ -5,11 +5,7 @@ class NoteSheet extends StatefulWidget {
   final String? initialNote;
   final Function(String) onSave;
 
-  const NoteSheet({
-    super.key,
-    this.initialNote,
-    required this.onSave,
-  });
+  const NoteSheet({super.key, this.initialNote, required this.onSave});
 
   @override
   State<NoteSheet> createState() => _NoteSheetState();
@@ -32,89 +28,47 @@ class _NoteSheetState extends State<NoteSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.only(bottom: bottomInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Note', style: TextStyle(color: Colors.black)),
+        leading: TextButton(
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero, // 移除默认的内边距
+            minimumSize: Size.zero, // 设置最小尺寸为零
+          ),
+          child: const Text('Cancel', style: TextStyle(color: Colors.blue)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Done', style: TextStyle(color: Colors.blue)),
+            onPressed: () {
+              widget.onSave(_noteController.text.trim());
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+      resizeToAvoidBottomInset: true,
+      body: Column(
         children: [
-          AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            title: const Text(
-              'Note',
-              style: TextStyle(color: Colors.black),
-            ),
-            leading: TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.pop(context),
-            ),
-            actions: [
-              TextButton(
-                child: const Text('Done'),
-                onPressed: () {
-                  widget.onSave(_noteController.text.trim());
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _noteController,
-              autofocus: true,
-              maxLines: null,
-              decoration:  InputDecoration(
-                hintText: 'add_note'.tr,
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: Colors.grey.withOpacity(0.2),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _noteController,
+                autofocus: true,
+                maxLines: null,
+                style: const TextStyle(color: Colors.black), // 设置文本颜色
+                decoration: InputDecoration(
+                  hintText: 'add_note'.tr,
+                  hintStyle: TextStyle(color: Colors.grey[400]), // 设置提示文本颜色
+                  border: InputBorder.none,
                 ),
               ),
-            ),
-            child: Row(
-              children: [
-                TextButton(
-                  child: const Text('Body'),
-                  onPressed: () {
-                    // TODO: 实现格式选项
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.format_bold),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.format_italic),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.format_underline),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.format_list_bulleted),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.format_list_numbered),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.link),
-                  onPressed: () {},
-                ),
-              ],
             ),
           ),
         ],
