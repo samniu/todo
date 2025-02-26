@@ -116,6 +116,15 @@ class TodoController extends GetxController {
 
   Future<void> _loadFromServer() async {
     try {
+      // First check if there are any unsynced todos
+      if (await hasUnsyncedLocalTasks()) {
+        // If unsynced tasks exist, sync them first
+        await syncTodos();
+        // syncTodos() already calls loadTodos(), so we can return
+        return;
+      }
+
+      // If no unsynced tasks, proceed with loading from server
       final response = await GetConnect().get(
         ApiConfig.getTodos(),
         headers: {'Authorization': 'Bearer ${authController.token}'},
@@ -153,16 +162,16 @@ class TodoController extends GetxController {
 
   // 添加任务
   Future<void> addTodo(Todo todo) async {
-  if (authController.isLoggedIn) {
-    try {
-      await _addToServer(todo);
-    } catch (e) {
-      print('Server add failed: $e');
+    if (authController.isLoggedIn) {
+      try {
+        await _addToServer(todo);
+      } catch (e) {
+        print('Server add failed: $e');
+        await _addToLocal(todo); // 保存到本地
+      }
+    } else {
       await _addToLocal(todo); // 保存到本地
     }
-  } else {
-    await _addToLocal(todo); // 保存到本地
-  }
   }
 
   Future<void> _addToServer(Todo todo) async {
@@ -181,7 +190,6 @@ class TodoController extends GetxController {
       final serverTodo = Todo.fromJson(response.body['data']);
       // 根据需要执行其他操作，如替换本地任务 ID
       _replaceLocalTodo(todo, serverTodo);
-
     } catch (e) {
       print('Server add failed: $e');
       throw e; // 将异常抛出，由 addTodo 处理
@@ -308,16 +316,37 @@ class TodoController extends GetxController {
 
   //离线任务上传逻辑
   // 检查是否有未同步的任务
-  bool hasUnsyncedTasks() {
-    return todos.any((todo) => todo.id.isEmpty) || 
-          completedTodos.any((todo) => todo.id.isEmpty);
+  Future<bool> hasUnsyncedLocalTasks() async {
+    // Check if in-memory lists are empty
+    if (todos.isEmpty && completedTodos.isEmpty) {
+      // If empty, load from local storage first
+      await _loadFromLocal();
+    }
+
+    // Now check for unsynced tasks
+    bool result =
+        todos.any((todo) => todo.id.isEmpty) ||
+        completedTodos.any((todo) => todo.id.isEmpty);
+
+    print('hasUnsyncedLocalTasks result: $result');
+    return result;
   }
 
+  bool hasUnsyncedTasks() {
+    // Now check for unsynced tasks
+    bool result =
+        todos.any((todo) => todo.id.isEmpty) ||
+        completedTodos.any((todo) => todo.id.isEmpty);
 
-    // 同步任务
+    print('hasUnsyncedTasks result: $result');
+    return result;
+  }
+
+  // 同步任务
   Future<void> syncTodos() async {
     final unsyncedTodos = todos.where((todo) => todo.id.isEmpty).toList();
-    final unsyncedCompletedTodos = completedTodos.where((todo) => todo.id.isEmpty).toList();
+    final unsyncedCompletedTodos =
+        completedTodos.where((todo) => todo.id.isEmpty).toList();
     final allUnsyncedTodos = [...unsyncedTodos, ...unsyncedCompletedTodos];
 
     for (final todo in allUnsyncedTodos) {
@@ -325,6 +354,8 @@ class TodoController extends GetxController {
         await _addToServer(todo);
       } catch (e) {
         print('Failed to sync todo: ${todo.local_id}, error: $e');
+        await _loadFromLocal();
+        return;
       }
     }
 
@@ -339,16 +370,17 @@ class TodoController extends GetxController {
       todos[index] = newTodo;
     }
 
-    final completedIndex = completedTodos.indexWhere((t) => t.local_id == oldTodo.local_id);
+    final completedIndex = completedTodos.indexWhere(
+      (t) => t.local_id == oldTodo.local_id,
+    );
     if (completedIndex != -1) {
       completedTodos[completedIndex] = newTodo;
     }
   }
 
-
   Future<void> removeTodo(String localId) async {
     todos.removeWhere((todo) => todo.local_id == localId);
     completedTodos.removeWhere((todo) => todo.local_id == localId);
     await _saveToLocal();
-  } 
+  }
 }
